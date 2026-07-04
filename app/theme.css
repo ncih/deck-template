@@ -1,0 +1,36 @@
+/* =============================================================================
+   THEME — brand knobs for the AUDIENCE LAYER (index.html + presenter.html).
+
+   Change the accent + fonts here and BOTH the phone companion and the presenter
+   live view re-skin together. Defaults are deliberately neutral.
+
+   The DECK (deck.html) is INDEPENDENT — it's just slides. Replace it with your
+   own deck in any theme (e.g. one built with the frontend-slides skill); the
+   companion + presenter don't share or depend on the deck's look at all.
+   ============================================================================= */
+:root{
+  /* ---- accent (primary · selected chips · bars) ---- */
+  --accent:       #4F46E5;   /* the one colour most decks change */
+  --accent-dark:  #3A32B5;
+  --accent-tint:  #E0E7FF;
+  --accent-faint: #F4F3FF;
+  --accent-soft:  #8B92F0;   /* lighter accent for dark surfaces (presenter) */
+
+  /* ---- "good"/positive (quiz verdicts, Q&A, sync-ok) ---- */
+  --good:         #0A994A;
+  --good-tint:    #E6F4EC;
+  --good-soft:    #4CC98A;
+
+  /* ---- neutrals ---- */
+  --ink-strong:   #1E1B33;   /* headings + the presenter's dark surface base */
+  --paper:        #FCFBF9;   /* light background AND light text on dark */
+
+  /* presenter dark surface (change for a different dark) */
+  --navy-deep:    #141227;
+  --navy-card:    #2A2748;
+
+  /* ---- type ---- */
+  --serif: "Fraunces", Georgia, serif;
+  --sans:  "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono:  "IBM Plex Mono", ui-monospace, monospace;
+}

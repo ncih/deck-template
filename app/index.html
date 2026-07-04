@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FCFBF9">
+<title>Session · Attendee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="theme.css"><!-- accent + fonts live here -->
+<script src="config.js"></script>
+<style>
+  /* Brand knobs (accent, fonts, --ink-strong, --paper, --good) are in theme.css.
+     Only light-surface structural tokens live here. */
+  :root{
+    --ink:      #333333;   /* body text */
+    --body:     #6a6a6a;   /* muted text */
+    --hairline: #e7e7e7;   /* light borders */
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{ background:var(--paper); font-family:var(--sans); color:var(--ink);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; min-height:100vh; }
+
+  .shell{ max-width:430px; margin:0 auto; padding:0 22px 110px; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* masthead */
+  .masthead{ padding-top:calc(18px + env(safe-area-inset-top)); }
+  .masthead .row{ display:flex; justify-content:space-between; align-items:center; }
+  .wordmark{ font-weight:700; font-size:16px; letter-spacing:-0.01em; color:var(--ink-strong); }
+  .hero-logo{ font-weight:700; font-size:22px; letter-spacing:-0.02em; color:var(--ink-strong); margin:2px 0 24px; }
+  .masthead .section{ font-size:9px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--body); }
+  .masthead .line{ height:1px; background:var(--hairline); margin-top:12px; }
+
+  /* sync dot */
+  .sync{ position:fixed; top:calc(10px + env(safe-area-inset-top)); right:10px; width:7px; height:7px; border-radius:50%;
+    background:var(--good); opacity:.75; z-index:50; transition:background .3s; }
+  .sync.pending{ background:#E18437; animation:pulse 1.4s ease-in-out infinite; }
+  .sync.offline{ background:#b6b3ac; }
+  @keyframes pulse{ 0%,100%{opacity:.9} 50%{opacity:.3} }
+
+  /* progress */
+  .progress{ margin:18px 0 6px; }
+  .progress .plabel{ font-size:9px; font-weight:600; letter-spacing:0.26em; text-transform:uppercase; color:var(--body);
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .progress .plabel b{ color:var(--accent); font-weight:600; }
+  .route-line{ display:flex; align-items:center; }
+  .route-node{ width:9px; height:9px; border-radius:50%; border:1.5px solid #d8d5cf; background:var(--paper); flex:none; transition:all .3s; }
+  .route-node.done{ background:var(--accent); border-color:var(--accent); }
+  .route-node.now{ border-color:var(--accent); background:var(--paper); box-shadow:0 0 0 3.5px var(--accent-tint); }
+  .route-seg{ flex:1; height:1.5px; background:#d8d5cf; transition:background .3s; }
+  .route-seg.done{ background:var(--accent); }
+
+  /* step frame */
+  .step{ padding-top:22px; flex:1; display:flex; flex-direction:column; animation:rise .35s ease both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:none;} }
+  .backlink{ align-self:flex-start; background:none; border:none; cursor:pointer; font-family:var(--sans);
+    font-size:10.5px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; color:var(--body); padding:4px 0; margin-bottom:14px; }
+  .backlink:active{ color:var(--accent-dark); }
+  .kicker{ display:flex; align-items:center; gap:11px; font-size:10px; font-weight:600; letter-spacing:0.26em; text-transform:uppercase; color:var(--ink-strong); }
+  .kicker::before{ content:""; display:block; width:26px; height:2px; background:var(--accent); flex:none; }
+  .kicker .cp{ color:var(--body); font-weight:500; }
+  h1.title{ font-family:var(--serif); font-optical-sizing:auto; font-size:30px; font-weight:540; letter-spacing:-0.015em;
+    line-height:1.12; color:var(--ink-strong); margin:14px 0 0; }
+  h1.title em{ font-style:italic; font-weight:440; color:var(--accent); }
+  .lede{ margin-top:10px; font-size:14px; line-height:1.55; color:var(--body); }
+
+  /* form */
+  .form{ margin-top:24px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:9.5px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--body); margin-bottom:6px; }
+  .field label .opt{ color:#b6b3ac; letter-spacing:0.12em; }
+  .field input{ width:100%; font-family:var(--sans); font-size:16px; color:var(--ink-strong); background:#fff;
+    border:1px solid var(--hairline); border-radius:0; padding:13px 14px; outline:none; transition:border-color .2s; -webkit-appearance:none; appearance:none; }
+  .field input:focus{ border-color:var(--ink-strong); }
+  .field input.err{ border-color:var(--accent); background:var(--accent-faint); }
+  .field .errmsg{ display:none; font-size:11.5px; color:var(--accent-dark); margin-top:5px; }
+  .field.show-err .errmsg{ display:block; }
+
+  /* chips */
+  .chips{ margin-top:22px; display:flex; flex-direction:column; gap:10px; }
+  .chip{ text-align:left; background:#fff; border:1px solid var(--hairline); border-left:2px solid var(--hairline);
+    padding:14px 16px; cursor:pointer; font-family:var(--sans); width:100%; transition:border-color .15s, background .15s; display:block; }
+  .chip .cname{ font-size:14.5px; font-weight:500; color:var(--ink-strong); letter-spacing:0.003em; line-height:1.35; display:flex; align-items:baseline; gap:8px; }
+  .chip .cname .tag{ margin-left:auto; flex:none; font-size:8.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--body); }
+  .chip .csub{ font-size:12px; color:var(--body); line-height:1.45; margin-top:4px; }
+  .chip.sel{ border-color:var(--accent); border-left:2px solid var(--accent); background:var(--accent-faint); }
+  .chip.sel .cname{ color:var(--accent-dark); }
+  .pickhint{ margin-top:12px; font-size:11px; color:#9a968e; letter-spacing:0.04em; text-align:center; }
+
+  /* buttons */
+  .actions{ margin-top:26px; }
+  .btn{ display:block; width:100%; font-family:var(--sans); font-size:12px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase;
+    padding:16px 18px; cursor:pointer; border:none; border-radius:0; transition:opacity .2s, background .2s; }
+  .btn.primary{ background:var(--ink-strong); color:var(--paper); }
+  .btn.primary:disabled{ opacity:.25; cursor:default; }
+  .btn.ghost{ background:transparent; color:var(--body); border:1px solid var(--hairline); margin-top:10px; }
+
+  /* yes/no */
+  .counter{ font-size:9.5px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:#9a968e; margin-top:26px; }
+  .qtext{ font-family:var(--serif); font-optical-sizing:auto; font-size:23px; font-weight:520; letter-spacing:-0.01em; line-height:1.25; color:var(--ink-strong); margin-top:10px; min-height:86px; }
+  .yn{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:26px; }
+  .yn button{ font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; padding:20px 10px;
+    background:#fff; color:var(--ink-strong); border:1px solid var(--hairline); cursor:pointer; transition:all .15s; }
+  .yn button:active{ border-color:var(--accent); background:var(--accent-faint); color:var(--accent-dark); }
+  .qdots{ display:flex; gap:6px; margin-top:22px; }
+  .qdot{ width:6px; height:6px; border-radius:50%; background:#ddd9d2; }
+  .qdot.done{ background:var(--accent); }
+
+  /* verdict */
+  .verdict{ margin-top:26px; background:var(--ink-strong); border-left:3px solid var(--accent); padding:24px 22px 22px; color:var(--paper); }
+  .verdict.good{ border-left-color:var(--good); }
+  .verdict .vkicker{ font-size:9px; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:rgba(252,251,249,.55); }
+  .verdict h2{ font-family:var(--serif); font-optical-sizing:auto; font-size:21px; font-weight:540; letter-spacing:-0.01em; line-height:1.22; margin-top:10px; color:#fff; }
+  .verdict h2 .vaccent{ color:var(--accent-tint); }
+  .verdict.good h2 .vaccent{ color:#a8e6c4; }
+  .verdict p{ margin-top:12px; font-size:13px; line-height:1.6; color:rgba(252,251,249,.78); }
+
+  /* waiting */
+  .waitbox{ margin-top:30px; border:1px dashed #d8d5cf; padding:34px 24px 30px; text-align:center; }
+  .waitbox .bignod{ font-size:34px; line-height:1; }
+  .waitbox .wtitle{ font-family:var(--serif); font-optical-sizing:auto; font-size:22px; font-weight:540; letter-spacing:-0.01em; line-height:1.25; color:var(--ink-strong); margin-top:14px; }
+  .waitbox .wtitle em{ font-style:italic; color:var(--accent); }
+  .waitbox .wsub{ margin-top:10px; font-size:13px; line-height:1.55; color:var(--body); }
+  .waitdots{ display:flex; gap:8px; justify-content:center; margin-top:22px; }
+  .waitdots span{ width:7px; height:7px; border-radius:50%; background:var(--accent); animation:wpulse 1.3s ease-in-out infinite; }
+  .waitdots span:nth-child(2){ animation-delay:.22s; } .waitdots span:nth-child(3){ animation-delay:.44s; }
+  @keyframes wpulse{ 0%,100%{opacity:.15} 50%{opacity:.9} }
+
+  /* Q&A */
+  .qa-fab{ position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:60; display:none; font-family:var(--sans);
+    font-size:10.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; background:var(--ink-strong); color:var(--paper);
+    border:none; border-radius:999px; padding:13px 18px; cursor:pointer; box-shadow:0 4px 16px rgba(26,24,71,.28); }
+  .qa-fab.show{ display:block; }
+  .qa-fab .q{ color:var(--accent-tint); margin-right:6px; font-family:var(--serif); font-style:italic; text-transform:none; font-size:13px; letter-spacing:0; }
+  .qa-veil{ position:fixed; inset:0; z-index:70; background:rgba(26,24,71,.45); display:none; }
+  .qa-veil.show{ display:block; }
+  .qa-sheet{ position:fixed; left:0; right:0; bottom:0; z-index:71; background:var(--paper); border-top:2px solid var(--accent);
+    padding:22px 22px calc(22px + env(safe-area-inset-bottom)); max-width:430px; margin:0 auto; transform:translateY(105%); transition:transform .28s cubic-bezier(.22,.9,.35,1); }
+  .qa-veil.show .qa-sheet{ transform:none; }
+  .qa-sheet .qk{ font-size:10px; font-weight:600; letter-spacing:0.26em; text-transform:uppercase; color:var(--ink-strong); display:flex; align-items:center; gap:11px; }
+  .qa-sheet .qk::before{ content:""; width:26px; height:2px; background:var(--accent); }
+  .qa-sheet textarea{ width:100%; margin-top:14px; font-family:var(--sans); font-size:16px; color:var(--ink-strong); background:#fff;
+    border:1px solid var(--hairline); padding:13px 14px; min-height:96px; resize:vertical; outline:none; border-radius:0; -webkit-appearance:none; appearance:none; }
+  .qa-sheet textarea:focus{ border-color:var(--ink-strong); }
+  .qa-sheet .qrow{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .qa-sent{ display:none; margin-top:14px; padding:12px 14px; background:var(--good-tint); border:1px solid #bfe4cf; font-size:12.5px; color:#0a6e38; text-align:center; }
+  .qa-sent.show{ display:block; }
+
+  /* finale card */
+  .cardwrap{ margin-top:24px; padding-bottom:96px; }
+  .route-card{ background:#fff; border:1px solid var(--hairline); box-shadow:0 1px 2px rgba(26,24,71,.06), 0 16px 40px -18px rgba(26,24,71,.22); }
+  .rc-head{ background:var(--ink-strong); padding:16px 20px 14px; display:flex; justify-content:space-between; align-items:center; }
+  .rc-head .wm{ color:var(--paper); font-weight:700; font-size:15px; letter-spacing:-0.01em; }
+  .rc-head .lbl{ font-size:8.5px; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:rgba(252,251,249,.55); }
+  .rc-id{ padding:20px 20px 16px; border-bottom:1px dashed #d8d5cf; position:relative; }
+  .rc-id::before,.rc-id::after{ content:""; position:absolute; bottom:-7px; width:14px; height:14px; border-radius:50%; background:var(--paper); border:1px solid var(--hairline); }
+  .rc-id::before{ left:-8px; } .rc-id::after{ right:-8px; }
+  .rc-id .pass{ font-size:8.5px; font-weight:600; letter-spacing:0.26em; text-transform:uppercase; color:var(--accent); }
+  .rc-id .nm{ font-family:var(--serif); font-optical-sizing:auto; font-size:24px; font-weight:540; letter-spacing:-0.01em; color:var(--ink-strong); margin-top:6px; line-height:1.15; }
+  .rc-id .co{ font-size:12.5px; color:var(--body); margin-top:3px; }
+  .rc-route{ padding:18px 20px 6px; }
+  .rc-stop{ display:flex; gap:14px; position:relative; padding-bottom:16px; }
+  .rc-stop .marker{ width:9px; display:flex; flex-direction:column; align-items:center; flex:none; padding-top:4px; }
+  .rc-stop .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
+  .rc-stop .stem{ width:1.5px; flex:1; background:#e3e0da; margin-top:4px; }
+  .rc-stop:last-child .stem{ display:none; }
+  .rc-stop .slab{ font-size:8.5px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:#9a968e; }
+  .rc-stop .sval{ font-size:14px; font-weight:600; color:var(--ink-strong); margin-top:2px; line-height:1.3; }
+  .rc-rec{ margin:6px 20px 0; padding:14px 0 18px; border-top:1px solid var(--hairline); font-family:var(--serif); font-optical-sizing:auto;
+    font-style:italic; font-size:14.5px; font-weight:440; line-height:1.55; color:var(--ink); }
+  .rc-rec b{ font-style:normal; font-weight:560; color:var(--accent); }
+  .rc-foot{ padding:13px 20px 15px; border-top:1px solid var(--hairline); display:flex; justify-content:space-between; align-items:baseline;
+    font-size:10px; color:var(--body); letter-spacing:0.03em; }
+  .savehint{ display:none; margin-top:12px; padding:12px 14px; background:var(--accent-faint); border:1px solid var(--accent-tint); font-size:12px; color:var(--accent-dark); line-height:1.5; text-align:center; }
+  .savehint.show{ display:block; }
+  .donote{ margin-top:22px; text-align:center; font-family:var(--serif); font-style:italic; font-size:14px; color:var(--body); line-height:1.6; }
+  .donote b{ font-style:normal; font-weight:560; color:var(--ink-strong); }
+  .endlinks{ margin-top:22px; }
+  .biglink{ display:flex; align-items:center; justify-content:center; width:100%; padding:17px 18px; font-family:var(--sans); font-size:12.5px; font-weight:600;
+    letter-spacing:0.14em; text-transform:uppercase; text-decoration:none; text-align:center; border-radius:0; transition:opacity .2s, background .2s; }
+  .biglink + .biglink{ margin-top:11px; }
+  .biglink.primary{ background:var(--ink-strong); color:var(--paper); }
+  .biglink.secondary{ background:#fff; color:var(--ink-strong); border:1px solid var(--ink-strong); }
+  .biglink:active{ opacity:.75; }
+</style>
+</head>
+<body>
+  <div class="sync" id="syncDot" title="Sync status"></div>
+  <div class="shell">
+    <header class="masthead">
+      <div class="row">
+        <div class="wordmark" id="brandWord"></div>
+        <div class="section" id="brandTag"></div>
+      </div>
+      <div class="line"></div>
+    </header>
+    <div class="progress" id="progress" style="display:none">
+      <div class="plabel"><span>Your <b>progress</b></span><span id="pcount"></span></div>
+      <div class="route-line" id="routeLine"></div>
+    </div>
+    <main id="app"></main>
+  </div>
+
+  <button class="qa-fab" id="qaFab" type="button"><span class="q">?</span>Ask a question</button>
+  <div class="qa-veil" id="qaVeil">
+    <div class="qa-sheet">
+      <div class="qk" id="qaTitle">Ask a question</div>
+      <textarea id="qaText" placeholder="Type it here — it lands on the presenter screen, with your name on it." maxlength="500"></textarea>
+      <div class="qa-sent" id="qaSent">Sent — it’s in the Q&amp;A queue. 👌</div>
+      <div class="qrow">
+        <button class="btn ghost" id="qaCancel" style="margin-top:0">Close</button>
+        <button class="btn primary" id="qaSend">Send it</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var CFG = window.DECK_CONFIG || {};
+  var FLOW = CFG.flow || [];
+  var PFX  = (CFG.storagePrefix || "deck") + "_";
+  /* one shared DB for all presentations; every row is tagged with this event */
+  var EVENT = CFG.event || "default";
+  var T = Object.assign({ leads:"pres_leads", answers:"pres_answers", questions:"pres_questions", state:"pres_state" }, CFG.tables || {});
+
+  /* screen order: register -> each flow id -> card */
+  var SCREENS = ["register"].concat(FLOW.map(function(f){ return f.id; })).concat(["card"]);
+  function flowItem(id){ for(var i=0;i<FLOW.length;i++){ if(FLOW[i].id===id) return FLOW[i]; } return null; }
+  function prevScreen(id){ var i = SCREENS.indexOf(id); return i > 0 ? SCREENS[i-1] : "register"; }
+  function nextScreen(id){ var i = SCREENS.indexOf(id); return (i>=0 && i<SCREENS.length-1) ? SCREENS[i+1] : "card"; }
+
+  /* brand chrome */
+  document.title = (CFG.brand && CFG.brand.name ? CFG.brand.name : "Session") + " · Attendee";
+  document.getElementById("brandWord").textContent = (CFG.brand && CFG.brand.name) || "";
+  document.getElementById("brandTag").textContent  = (CFG.brand && CFG.brand.tagline) || "";
+  document.getElementById("qaTitle").textContent   = "Ask " + ((CFG.brand && CFG.brand.presenter) || "a question");
+
+  /* ---- supabase ---- */
+  var sb = null;
+  try {
+    var _realFetch = window.fetch ? window.fetch.bind(window) : undefined;
+    var _fetchProxy = _realFetch ? function(){ if(window.__deckOffline) return Promise.reject(new TypeError("Simulated offline")); return _realFetch.apply(null, arguments); } : undefined;
+    sb = window.supabase.createClient(CFG.supabase.url, CFG.supabase.publishableKey, {
+      auth:{ persistSession:false, autoRefreshToken:false },
+      global: _fetchProxy ? { fetch:_fetchProxy } : {}
+    });
+  } catch(e){ console.warn("supabase client unavailable", e); }
+
+  /* ---- device id ---- */
+  function deviceId(){
+    var id = localStorage.getItem(PFX+"device");
+    if(!id){ id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "d-"+Date.now()+"-"+Math.random().toString(16).slice(2); localStorage.setItem(PFX+"device", id); }
+    return id;
+  }
+  var DEVICE = deviceId();
+
+  /* ---- state ---- */
+  var DEFAULT = { screen:"register", lead:{}, answers:{}, quiz:{} };
+  function loadState(){
+    try{ var s = JSON.parse(localStorage.getItem(PFX+"state")); if(s && s.screen){ if(!s.answers) s.answers={}; if(!s.quiz) s.quiz={}; return s; } }catch(e){}
+    return JSON.parse(JSON.stringify(DEFAULT));
+  }
+  var S = loadState();
+  function save(){ localStorage.setItem(PFX+"state", JSON.stringify(S)); }
+
+  /* ---- offline queue ---- */
+  var QKEY = PFX+"queue";
+  function loadQ(){ try{ return JSON.parse(localStorage.getItem(QKEY)) || []; }catch(e){ return []; } }
+  function saveQ(q){ localStorage.setItem(QKEY, JSON.stringify(q)); }
+  function setDot(){
+    var d = document.getElementById("syncDot"), q = loadQ();
+    if(!navigator.onLine){ d.className="sync offline"; d.title="Offline — answers saved on this phone"; }
+    else if(q.length){ d.className="sync pending"; d.title="Syncing…"; }
+    else { d.className="sync"; d.title="Synced"; }
+  }
+  function enqueue(job){ var q = loadQ(); q.push(job); saveQ(q); setDot(); flush(); }
+  var flushing = false;
+  function flush(){
+    if(flushing || !sb) return;
+    if(!loadQ().length){ setDot(); return; }
+    flushing = true;
+    (function next(){
+      var q = loadQ();
+      if(!q.length){ flushing=false; setDot(); return; }
+      sendJob(q[0]).then(function(ok){ if(ok){ var q2=loadQ(); q2.shift(); saveQ(q2); next(); } else { flushing=false; setDot(); } });
+    })();
+  }
+  function sendJob(job){
+    try{
+      if(job.t==="lead"){
+        return sb.from(T.leads).insert(job.p).then(function(res){
+          if(!res.error) return true;
+          var m = (""+(res.error.message||"")).toLowerCase();
+          if(res.error.code==="23505" || m.indexOf("duplicate")>=0) return true; // already registered
+          console.warn("lead insert failed", res.error); return false;
+        }, function(){ return false; });
+      }
+      if(job.t==="q"){
+        return sb.from(T.questions).insert(job.p).then(function(res){ if(!res.error) return true; console.warn("question insert failed", res.error); return false; }, function(){ return false; });
+      }
+      return sb.from(T.answers).upsert(job.p, { onConflict:"event,device_id,checkpoint" }).then(function(res){ if(!res.error) return true; console.warn("answer upsert failed", res.error); return false; }, function(){ return false; });
+    }catch(e){ return Promise.resolve(false); }
+  }
+  window.addEventListener("online", function(){ setDot(); flush(); });
+  window.addEventListener("offline", setDot);
+  setInterval(flush, 30000);
+
+  function saveAnswer(cp, obj){ S.answers[cp]=obj; save(); enqueue({ t:"ans", p:{ event:EVENT, device_id:DEVICE, checkpoint:cp, answer:obj } }); }
+
+  /* ---- presenter gate ---- */
+  var GATE = { open:null };                       // null = unknown => open (fail-open)
+  function gateClosed(need){ return need!=null && GATE.open!==null && GATE.open < need; }
+  function fetchGate(cb){
+    if(!sb){ GATE.open=null; if(cb) cb(); return; }
+    try{ sb.from(T.state).select("open_checkpoint").eq("event",EVENT).maybeSingle().then(function(res){ GATE.open=(res.error||!res.data)?null:res.data.open_checkpoint; if(cb) cb(); }, function(){ GATE.open=null; if(cb) cb(); }); }
+    catch(e){ GATE.open=null; if(cb) cb(); }
+  }
+  var WAIT_T=null, WAIT_FN=null;
+  function clearWait(){ if(WAIT_T){ clearInterval(WAIT_T); WAIT_T=null; } if(WAIT_FN){ document.removeEventListener("visibilitychange", WAIT_FN); window.removeEventListener("focus", WAIT_FN); WAIT_FN=null; } }
+  function needFor(screen){ var f = flowItem(screen); return f ? (f.gate==null?null:f.gate) : null; }
+
+  function nav(screen){
+    S.screen=screen; save(); render();
+    fetchGate(function(){ if(gateClosed(needFor(S.screen))) render(); });
+  }
+
+  /* ---- progress ---- */
+  function doneCount(){ var n=0; FLOW.forEach(function(f){ if(S.answers[f.id]) n++; }); return n; }
+  function renderProgress(){
+    var wrap=document.getElementById("progress"), line=document.getElementById("routeLine");
+    if(S.screen==="register" || !FLOW.length){ wrap.style.display="none"; return; }
+    wrap.style.display=""; var done=doneCount(), total=FLOW.length;
+    document.getElementById("pcount").textContent = done+" / "+total;
+    var html="";
+    for(var i=0;i<total;i++){
+      var cls = i<done ? "route-node done" : (i===done ? "route-node now" : "route-node");
+      html += '<div class="'+cls+'"></div>';
+      if(i<total-1) html += '<div class="route-seg'+(i<done-1?" done":"")+'"></div>';
+    }
+    line.innerHTML=html;
+  }
+
+  /* ---- helpers ---- */
+  var app=document.getElementById("app");
+  function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function optByKey(list,k){ for(var i=0;i<(list||[]).length;i++){ if(list[i].k===k) return list[i]; } return null; }
+  function backHTML(){ return '<button type="button" class="backlink" id="backBtn">&#8592; Back</button>'; }
+  function bindBack(fn){ var b=document.getElementById("backBtn"); if(b) b.addEventListener("click", fn); }
+
+  function chipHTML(list, selected, withTag){
+    selected = selected||[]; var h='<div class="chips">';
+    (list||[]).forEach(function(o){
+      var sel = selected.indexOf(o.k)>=0;
+      h += '<button type="button" class="chip'+(sel?" sel":"")+'" data-k="'+o.k+'">'+
+        '<span class="cname">'+esc(o.n)+(withTag&&o.tag?'<span class="tag">'+esc(o.tag)+"</span>":"")+"</span>"+
+        (o.sub?'<span class="csub">'+esc(o.sub)+"</span>":"")+"</button>";
+    });
+    return h+"</div>";
+  }
+
+  function renderSingle(f){
+    var current = S.answers[f.id] ? S.answers[f.id].choice : null;
+    var sel = current;
+    app.innerHTML = '<div class="step">'+backHTML()+
+      '<div class="kicker">'+esc(f.kicker||"")+(f.cp?' <span class="cp">· '+esc(f.cp)+"</span>":"")+"</div>"+
+      '<h1 class="title">'+(f.title||"")+"</h1>"+
+      (f.lede?'<p class="lede">'+f.lede+"</p>":"")+
+      chipHTML(f.options, current?[current]:[], !!f.tags)+
+      '<div class="actions"><button class="btn primary" id="cont" '+(current?"":"disabled")+">"+esc(f.cta||"Continue")+"</button></div></div>";
+    bindBack(function(){ nav(prevScreen(f.id)); });
+    app.querySelectorAll(".chip").forEach(function(ch){ ch.addEventListener("click", function(){
+      sel = ch.getAttribute("data-k");
+      app.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
+      ch.classList.add("sel"); document.getElementById("cont").disabled=false;
+    }); });
+    document.getElementById("cont").addEventListener("click", function(){ if(sel){ saveAnswer(f.id,{ choice:sel }); nav(nextScreen(f.id)); } });
+  }
+
+  function renderMulti(f){
+    var sel = (S.answers[f.id] && S.answers[f.id].choices || []).slice();
+    app.innerHTML = '<div class="step">'+backHTML()+
+      '<div class="kicker">'+esc(f.kicker||"")+(f.cp?' <span class="cp">· '+esc(f.cp)+"</span>":"")+"</div>"+
+      '<h1 class="title">'+(f.title||"")+"</h1>"+
+      (f.lede?'<p class="lede">'+f.lede+"</p>":"")+
+      chipHTML(f.options, sel, !!f.tags)+
+      (f.pickhint?'<p class="pickhint">'+esc(f.pickhint)+"</p>":"")+
+      '<div class="actions"><button class="btn primary" id="cont" '+(sel.length?"":"disabled")+">"+esc(f.cta||"Continue")+"</button></div></div>";
+    bindBack(function(){ nav(prevScreen(f.id)); });
+    function paint(){ app.querySelectorAll(".chip").forEach(function(x){ x.classList.toggle("sel", sel.indexOf(x.getAttribute("data-k"))>=0); }); document.getElementById("cont").disabled=!sel.length; }
+    app.querySelectorAll(".chip").forEach(function(ch){ ch.addEventListener("click", function(){
+      var k = ch.getAttribute("data-k"), i = sel.indexOf(k), ex = f.exclusive||[];
+      if(i>=0){ sel.splice(i,1); }
+      else if(ex.indexOf(k)>=0){ sel=[k]; }
+      else { sel = sel.filter(function(x){ return ex.indexOf(x)<0; }); if(f.max && sel.length>=f.max) sel.shift(); sel.push(k); }
+      paint();
+    }); });
+    document.getElementById("cont").addEventListener("click", function(){ if(sel.length){ saveAnswer(f.id,{ choices:sel.slice() }); nav(nextScreen(f.id)); } });
+  }
+
+  function verdictFor(f, yes){
+    var vs = (f.verdicts||[]).slice().sort(function(a,b){ return b.min-a.min; });
+    for(var i=0;i<vs.length;i++){ if(yes>=vs[i].min) return vs[i]; }
+    return vs[vs.length-1] || { word:"—", good:false, title:"", body:"" };
+  }
+  function renderQuiz(f){
+    var st = S.quiz[f.id] || { i:0, ans:[] }; S.quiz[f.id]=st;
+    var qs = f.questions||[], n = qs.length, i = st.i;
+    if(i < n){
+      var dots=""; for(var d=0; d<n; d++) dots += '<div class="qdot'+(d<i?" done":"")+'"></div>';
+      app.innerHTML = '<div class="step">'+backHTML()+
+        '<div class="kicker">'+esc(f.kicker||"")+(f.cp?' <span class="cp">· '+esc(f.cp)+"</span>":"")+"</div>"+
+        '<div class="counter">Question '+(i+1)+" of "+n+"</div>"+
+        '<div class="qtext">'+esc(qs[i])+"</div>"+
+        '<div class="yn"><button data-v="1">Yes</button><button data-v="0">No</button></div>'+
+        '<div class="qdots">'+dots+"</div></div>";
+      bindBack(function(){ if(i>0){ st.i=i-1; save(); render(); } else nav(prevScreen(f.id)); });
+      app.querySelectorAll(".yn button").forEach(function(b){ b.addEventListener("click", function(){ st.ans[i]=b.getAttribute("data-v")==="1"; st.i=i+1; save(); render(); }); });
+    } else {
+      var yes = st.ans.filter(Boolean).length, v = verdictFor(f, yes);
+      app.innerHTML = '<div class="step">'+backHTML()+
+        '<div class="kicker">'+esc(f.kicker||"")+' <span class="cp">· Verdict</span></div>'+
+        '<div class="verdict'+(v.good?" good":"")+'"><div class="vkicker">Your result</div><h2>'+(v.title||esc(v.word))+"</h2><p>"+(v.body||"")+"</p></div>"+
+        '<div class="actions"><button class="btn primary" id="cont">Continue</button><button class="btn ghost" id="redo">Retake</button></div></div>';
+      bindBack(function(){ st.i=n-1; save(); render(); });
+      document.getElementById("cont").addEventListener("click", function(){ saveAnswer(f.id,{ yes:yes, total:n, verdict:v.word, good:!!v.good }); nav(nextScreen(f.id)); });
+      document.getElementById("redo").addEventListener("click", function(){ S.quiz[f.id]={ i:0, ans:[] }; save(); render(); });
+    }
+  }
+
+  /* ---- waiting room ---- */
+  function renderWaiting(need){
+    var who = (CFG.brand && CFG.brand.presenter) || "The host";
+    app.innerHTML = '<div class="step">'+backHTML()+
+      '<div class="kicker">Checkpoint '+need+' <span class="cp">· Hold</span></div>'+
+      '<div class="waitbox"><div class="bignod">👆</div>'+
+        '<div class="wtitle">'+esc(who)+' will open this one — <em>eyes up front.</em></div>'+
+        '<div class="wsub">This checkpoint unlocks when the session gets there. Keep the page open — it moves by itself.</div>'+
+        '<div class="waitdots"><span></span><span></span><span></span></div></div></div>';
+    bindBack(function(){ clearWait(); nav(prevScreen(S.screen)); });
+    clearWait();
+    var check=function(){ fetchGate(function(){ if(!gateClosed(need)){ clearWait(); render(); } }); };
+    WAIT_T=setInterval(check, 5000); WAIT_FN=check;
+    document.addEventListener("visibilitychange", WAIT_FN); window.addEventListener("focus", WAIT_FN); check();
+  }
+
+  /* ---- Q&A ---- */
+  var qaFab=document.getElementById("qaFab"), qaVeil=document.getElementById("qaVeil"), qaText=document.getElementById("qaText"), qaSent=document.getElementById("qaSent");
+  function updateFab(){ qaFab.classList.toggle("show", S.screen!=="register" && !!(S.lead && S.lead.name)); }
+  qaFab.addEventListener("click", function(){ qaSent.classList.remove("show"); qaVeil.classList.add("show"); setTimeout(function(){ try{ qaText.focus(); }catch(e){} }, 250); });
+  document.getElementById("qaCancel").addEventListener("click", function(){ qaVeil.classList.remove("show"); });
+  qaVeil.addEventListener("click", function(e){ if(e.target===qaVeil) qaVeil.classList.remove("show"); });
+  document.getElementById("qaSend").addEventListener("click", function(){
+    var text=qaText.value.trim(); if(!text) return;
+    enqueue({ t:"q", p:{ event:EVENT, device_id:DEVICE, name:S.lead.name||"Anonymous", company:S.lead.company||"", text:text, answered:false } });
+    qaText.value=""; qaSent.classList.add("show"); setTimeout(function(){ qaVeil.classList.remove("show"); }, 1400);
+  });
+
+  /* ---- finale card ---- */
+  function cardValue(cp){
+    var f = flowItem(cp), a = S.answers[cp]; if(!f || !a) return "—";
+    if(f.type==="single"){ var o=optByKey(f.options, a.choice); return o?o.n:(a.choice||"—"); }
+    if(f.type==="multi"){ return (a.choices||[]).map(function(k){ var o=optByKey(f.options,k); return o?o.n:k; }).join(" · ") || "—"; }
+    if(f.type==="quiz"){ return a.verdict || "—"; }
+    return "—";
+  }
+  function rcStop(lab,val){ return '<div class="rc-stop"><div class="marker"><div class="dot"></div><div class="stem"></div></div><div><div class="slab">'+esc(lab)+'</div><div class="sval">'+esc(val)+"</div></div></div>"; }
+  function recommendation(){
+    // generic: echo the last quiz verdict body if present, else a friendly default
+    for(var i=FLOW.length-1;i>=0;i--){ var f=FLOW[i]; if(f.type==="quiz" && S.answers[f.id]){ var v=verdictFor(f, S.answers[f.id].yes||0); if(v.body) return v.body; } }
+    return "Here’s your session at a glance — <b>we’ll follow up with the details.</b>";
+  }
+  function renderCard(){
+    var fin = CFG.finale||{}, b = CFG.brand||{};
+    if(!S.answers["done"]) saveAnswer("done", { finale:true });
+    var stopsHTML = (fin.stops||[]).map(function(s){ return rcStop(s.label, cardValue(s.cp)); }).join("");
+    var links = (b.links||[]).map(function(l,i){ return '<a class="biglink '+(l.primary?"primary":"secondary")+'" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+"</a>"; }).join("");
+    app.innerHTML = '<div class="step">'+backHTML()+
+      '<div class="kicker">'+esc(fin.kicker||"Your profile")+' <span class="cp">· '+esc(fin.cp||"Complete")+"</span></div>"+
+      '<h1 class="title">'+(fin.title||"Complete.")+"</h1>"+
+      '<div class="cardwrap"><div class="route-card" id="routeCard">'+
+        '<div class="rc-head"><div class="wm">'+esc(b.name||"")+'</div><div class="lbl">'+esc(fin.cardLabel||"Summary")+"</div></div>"+
+        '<div class="rc-id"><div class="pass">'+esc(fin.passLabel||"")+'</div><div class="nm">'+esc(S.lead.name||"Guest")+'</div><div class="co">'+esc(S.lead.company||"")+"</div></div>"+
+        '<div class="rc-route">'+stopsHTML+"</div>"+
+        '<div class="rc-rec">'+recommendation()+"</div>"+
+        '<div class="rc-foot"><span>'+esc(fin.footer||b.name||"")+"</span></div></div></div>"+
+      '<div class="savehint" id="saveHint">Couldn’t render the image on this phone — just screenshot this card. It’s yours.</div>'+
+      '<div class="actions"><button class="btn primary" id="saveImg">Save as image</button><button class="btn ghost" id="done">Done</button></div>'+
+      (links?'<div class="endlinks">'+links+"</div>":"")+
+      '<p class="donote" id="doneNote" style="display:none">'+(fin.note||"All set.")+"</p></div>";
+    bindBack(function(){ nav(prevScreen("card")); });
+    document.getElementById("saveImg").addEventListener("click", saveCardImage);
+    document.getElementById("done").addEventListener("click", function(){ document.getElementById("doneNote").style.display=""; document.getElementById("done").style.display="none"; });
+  }
+  function saveCardImage(){
+    var btn=document.getElementById("saveImg"); btn.disabled=true; btn.textContent="Rendering…";
+    function fail(){ btn.disabled=false; btn.textContent="Save as image"; document.getElementById("saveHint").classList.add("show"); }
+    function go(){
+      try{ window.html2canvas(document.getElementById("routeCard"), { backgroundColor:"#FCFBF9", scale:2, useCORS:true }).then(function(canvas){
+        try{ var link=document.createElement("a"); link.download=((CFG.brand&&CFG.brand.name)||"card").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+(S.lead.name||"card").toLowerCase().replace(/[^a-z0-9]+/g,"-")+".png";
+          link.href=canvas.toDataURL("image/png"); document.body.appendChild(link); link.click(); link.remove();
+          btn.disabled=false; btn.textContent="Saved ✓"; setTimeout(function(){ btn.textContent="Save as image"; }, 2500);
+        }catch(e){ fail(); }
+      }, fail); }catch(e){ fail(); }
+    }
+    if(window.html2canvas) return go();
+    var s=document.createElement("script"); s.src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"; s.onload=go; s.onerror=fail; document.head.appendChild(s);
+  }
+
+  /* ---- register ---- */
+  function renderRegister(){
+    var r = CFG.register||{}, b = CFG.brand||{};
+    var fieldsHTML = (r.fields||[]).map(function(fd){
+      return '<div class="field" id="f-'+fd.id+'"><label>'+esc(fd.label)+(fd.optional?' <span class="opt">· optional</span>':"")+"</label>"+
+        '<input id="in-'+fd.id+'" type="'+(fd.type||"text")+'" '+(fd.type==="email"?'inputmode="email" ':"")+'value="'+esc(S.lead[fd.id]||"")+'">'+
+        (fd.err?'<div class="errmsg">'+esc(fd.err)+"</div>":"")+"</div>";
+    }).join("");
+    app.innerHTML = '<div class="step"><div class="hero-logo">'+esc(b.name||"")+'</div>'+
+      '<div class="kicker">'+esc(r.kicker||"Welcome")+"</div>"+
+      '<h1 class="title">'+(r.title||"Welcome")+"</h1>"+
+      (r.lede?'<p class="lede">'+r.lede+"</p>":"")+
+      '<div class="form">'+fieldsHTML+"</div>"+
+      '<div class="actions"><button class="btn primary" id="reg">'+esc(r.cta||"Start")+"</button></div></div>";
+    document.getElementById("reg").addEventListener("click", function(){
+      var ok=true, lead={};
+      (r.fields||[]).forEach(function(fd){
+        var val=document.getElementById("in-"+fd.id).value.trim(); lead[fd.id]=val;
+        var bad=false;
+        if(fd.required && !val) bad=true;
+        if(fd.type==="email" && val && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val)) bad=true;
+        var fEl=document.getElementById("f-"+fd.id), iEl=document.getElementById("in-"+fd.id);
+        if(fEl) fEl.classList.toggle("show-err", bad); if(iEl) iEl.classList.toggle("err", bad);
+        if(bad) ok=false;
+      });
+      if(!ok) return;
+      S.lead=lead; save();
+      enqueue({ t:"lead", p:{ event:EVENT, device_id:DEVICE, name:lead.name||"", company:lead.company||"", email:lead.email||"", role:lead.role||null } });
+      nav(FLOW.length ? FLOW[0].id : "card");
+    });
+  }
+
+  /* ---- main render ---- */
+  function render(){
+    clearWait(); renderProgress(); setDot(); updateFab(); window.scrollTo(0,0);
+    var need = needFor(S.screen);
+    if(gateClosed(need)){ renderWaiting(need); return; }
+    if(S.screen==="register") return renderRegister();
+    if(S.screen==="card") return renderCard();
+    var f = flowItem(S.screen);
+    if(!f) return renderRegister();
+    if(f.type==="single") return renderSingle(f);
+    if(f.type==="multi")  return renderMulti(f);
+    if(f.type==="quiz")   return renderQuiz(f);
+    renderRegister();
+  }
+
+  /* ---- boot ---- */
+  render(); flush();
+  fetchGate(function(){ if(gateClosed(needFor(S.screen))) render(); });
+})();
+</script>
+</body>
+</html>

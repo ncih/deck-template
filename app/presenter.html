@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Room Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="theme.css"><!-- accent + fonts live here -->
+<script src="config.js"></script>
+<style>
+  /* Brand knobs (accent, fonts, --ink-strong, --paper) are in theme.css.
+     Only the dark-surface tokens live here — tweak these for a different dark. */
+  :root{
+    --navy:      var(--ink-strong);
+    /* --navy-deep / --navy-card come from theme.css (dark surface, re-skinnable) */
+    --green:     var(--good);
+    --green-soft:var(--good-soft);
+    --faint:     rgba(252,251,249,.55);
+    --fainter:   rgba(252,251,249,.35);
+    --hairline:  rgba(252,251,249,.14);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ background:var(--navy-deep); color:var(--paper); font-family:var(--sans); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden; }
+  .frame{ height:100vh; display:flex; flex-direction:column; padding:24px 44px 20px; max-width:1920px; margin:0 auto; }
+
+  header .row{ display:flex; align-items:center; gap:22px; }
+  .wordmark{ font-weight:700; font-size:20px; letter-spacing:-0.01em; color:var(--paper); }
+  header h1{ font-family:var(--serif); font-optical-sizing:auto; font-size:26px; font-weight:520; letter-spacing:-0.015em; color:var(--paper); }
+  header h1 em{ font-style:italic; font-weight:440; color:var(--accent-soft); }
+  header .live{ margin-left:auto; display:flex; align-items:center; gap:9px; font-size:10.5px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--faint); }
+  header .live .dot{ width:8px; height:8px; border-radius:50%; background:var(--green-soft); animation:pulse 1.6s ease-in-out infinite; }
+  header .live .dot.stale{ background:#E18437; }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.25} }
+  header .qachip{ font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; background:transparent; color:var(--fainter);
+    border:1px solid var(--hairline); padding:7px 14px; cursor:pointer; transition:all .2s; white-space:nowrap; }
+  header .qachip:hover{ border-color:var(--faint); color:var(--faint); }
+  header .qachip.hot{ background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 2px rgba(228,85,91,.35); }
+  header .line{ height:1px; background:var(--hairline); margin-top:14px; }
+
+  .control{ display:flex; align-items:center; gap:16px; margin-top:14px; border:1px solid var(--hairline); border-left:3px solid var(--accent); background:var(--navy-card); padding:10px 18px; }
+  .control .clab{ font-size:9.5px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--fainter); flex:none; }
+  .gatechips{ display:flex; gap:6px; }
+  .gatechips button{ font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; background:transparent; color:var(--faint);
+    border:1px solid var(--hairline); padding:7px 13px; cursor:pointer; transition:all .15s; }
+  .gatechips button:hover{ border-color:var(--faint); }
+  .gatechips button.lit{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .gatechips button.now{ box-shadow:0 0 0 2px rgba(228,85,91,.45); }
+  .opennext{ font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; background:var(--paper); color:var(--navy); border:none; padding:9px 20px; cursor:pointer; }
+  .opennext:disabled{ opacity:.3; cursor:default; }
+  .control .cstate{ margin-left:auto; font-family:var(--serif); font-style:italic; font-size:13.5px; color:var(--faint); }
+  .control .cstate b{ font-style:normal; color:var(--paper); font-weight:600; }
+
+  .strip{ display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline); margin-top:14px; }
+  .stat{ background:var(--navy-deep); padding:12px 22px 14px; }
+  .stat .slab{ font-size:9.5px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--fainter); }
+  .stat .sval{ font-family:var(--serif); font-optical-sizing:auto; font-size:28px; font-weight:540; letter-spacing:-0.01em; color:var(--paper); margin-top:5px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stat .sval .unit{ font-size:15px; color:var(--faint); font-style:italic; font-weight:440; }
+  .stat.hero .sval{ color:var(--accent-soft); }
+
+  .grid{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(3, 1fr); grid-auto-rows:1fr; gap:14px; margin-top:14px; }
+  .panel{ background:var(--navy-card); border:1px solid var(--hairline); border-top:2px solid var(--accent); padding:16px 24px 14px; display:flex; flex-direction:column; min-height:0; position:relative; }
+  .panel .phead{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+  .panel .pk{ font-size:9.5px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--fainter); }
+  .panel .key{ font-family:var(--serif); font-style:italic; font-size:13px; color:var(--fainter); }
+  .panel h2{ font-family:var(--serif); font-optical-sizing:auto; font-size:18px; font-weight:520; letter-spacing:-0.01em; color:var(--paper); line-height:1.15; margin-bottom:10px; }
+  .panel h2 em{ font-style:italic; font-weight:440; color:var(--accent-soft); }
+
+  .bars{ flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; justify-content:safe center; gap:6px; overflow:hidden; }
+  .bar{ display:grid; grid-template-columns:minmax(0,200px) 1fr 48px; align-items:center; gap:12px; }
+  .bar .blab{ font-size:11.5px; font-weight:500; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right; }
+  .bar.top .blab{ color:var(--paper); font-weight:600; }
+  .bar .btrack{ height:12px; background:rgba(252,251,249,.06); position:relative; }
+  .bar .bfill{ position:absolute; inset:0 auto 0 0; width:0%; background:var(--accent); transition:width .6s cubic-bezier(.22,.9,.35,1); }
+  .bar.green .bfill{ background:var(--green); }
+  .bar.grey .bfill{ background:rgba(252,251,249,.28); }
+  .bar .bnum{ font-family:var(--serif); font-optical-sizing:auto; font-size:17px; font-weight:540; color:var(--paper); text-align:left; line-height:1; }
+  .bar .bnum.zero{ color:var(--fainter); }
+  .empty{ flex:1; display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-style:italic; font-size:15px; color:var(--fainter); }
+
+  .panel.qa{ border-top-color:var(--green); }
+  .qlist{ flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:6px; scrollbar-width:thin; scrollbar-color:rgba(252,251,249,.2) transparent; }
+  .qitem{ border:1px solid var(--hairline); border-left:2px solid var(--green-soft); padding:9px 12px; cursor:pointer; transition:opacity .2s, border-color .2s; }
+  .qitem .qwho{ font-size:9.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--green-soft); }
+  .qitem .qwho .qco{ color:var(--fainter); letter-spacing:0.1em; }
+  .qitem .qtxt{ font-family:var(--serif); font-optical-sizing:auto; font-size:14.5px; font-weight:440; line-height:1.35; color:var(--paper); margin-top:4px; }
+  .qitem.answered{ opacity:.28; border-left-color:var(--fainter); }
+  .qitem:hover{ border-color:var(--faint); }
+
+  body.focus .grid{ display:block; margin-top:14px; }
+  body.focus .panel{ display:none; }
+  body.focus .panel.focused{ display:flex; height:100%; padding:34px 60px 30px; }
+  body.focus .panel.focused h2{ font-size:clamp(26px, 4.8vh, 42px); margin-bottom:clamp(10px, 2.4vh, 24px); }
+  body.focus .panel.focused .pk{ font-size:12px; }
+  body.focus .panel.focused .bar{ grid-template-columns:minmax(0,340px) 1fr 90px; gap:22px; }
+  body.focus .panel.focused .bar .blab{ font-size:clamp(14px, 2.4vh, 20px); }
+  body.focus .panel.focused .bar .btrack{ height:clamp(15px, 2.9vh, 30px); }
+  body.focus .panel.focused .bar .bnum{ font-size:clamp(22px, 4.2vh, 44px); }
+  body.focus .panel.focused .empty{ font-size:24px; }
+  body.focus .panel.focused .qitem{ padding:14px 20px; }
+  body.focus .panel.focused .qitem .qwho{ font-size:13px; }
+  body.focus .panel.focused .qitem .qtxt{ font-size:26px; margin-top:8px; }
+
+  footer{ margin-top:12px; display:flex; justify-content:space-between; align-items:baseline; font-size:10.5px; letter-spacing:0.06em; color:var(--fainter); }
+  footer .keys b{ color:var(--faint); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <header>
+    <div class="row">
+      <div class="wordmark" id="brandWord"></div>
+      <h1 id="title"></h1>
+      <div class="live"><div class="dot" id="liveDot"></div><span id="liveLbl">Waiting…</span></div>
+      <button class="qachip" id="qaChip" title="Open the Q&amp;A feed (Q)">Q&amp;A · <span id="qaWait">0</span> waiting</button>
+    </div>
+    <div class="line"></div>
+  </header>
+
+  <div class="control">
+    <span class="clab">Attendee gate</span>
+    <div class="gatechips" id="gateChips"></div>
+    <button class="opennext" id="openNext">Open next →</button>
+    <span class="cstate" id="gateState">gate: connecting…</span>
+  </div>
+
+  <div class="strip" id="strip"></div>
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    <span id="footLbl"></span>
+    <span class="keys">Press <b>0–<span id="maxKey">0</span></b> to focus · <b>Q</b> for Q&amp;A · <b>Esc</b> for the grid</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var CFG = window.DECK_CONFIG || {};
+  var FLOW = CFG.flow || [];
+  /* one shared DB for all presentations; this presenter only sees its own event */
+  var EVENT = CFG.event || "default";
+  var T = Object.assign({ leads:"pres_leads", answers:"pres_answers", questions:"pres_questions", state:"pres_state" }, CFG.tables || {});
+
+  var sb = null;
+  try { sb = window.supabase.createClient(CFG.supabase.url, CFG.supabase.publishableKey, { auth:{ persistSession:false, autoRefreshToken:false } }); }
+  catch(e){ console.warn("supabase unavailable", e); }
+
+  /* brand chrome */
+  document.title = ((CFG.brand&&CFG.brand.name)||"Session") + " — " + ((CFG.presenter&&CFG.presenter.title)||"Live Room Map");
+  document.getElementById("brandWord").textContent = (CFG.brand&&CFG.brand.name)||"";
+  document.getElementById("title").innerHTML = "<em>"+esc((CFG.presenter&&CFG.presenter.title)||"Live Room Map")+"</em>";
+  document.getElementById("footLbl").textContent = (CFG.presenter&&CFG.presenter.footer)||"";
+
+  function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+  /* ---- derive panels + option catalogs from the flow ---- */
+  function panelOpts(f){
+    if(f.type==="quiz") return (f.verdicts||[]).map(function(v){ return { k:v.word, n:v.word, tone:v.good?"green":"grey" }; });
+    return (f.options||[]).map(function(o){ return { k:o.k, n:o.n, tone:"" }; });
+  }
+  var PANELS = FLOW.map(function(f){ return { id:f.id, type:f.type, pk:f.kicker||f.id, h:(f.cp||f.title||f.id), opts:panelOpts(f) }; });
+
+  var MAX_GATE = FLOW.reduce(function(m,f){ return Math.max(m, f.gate||0); }, 0);
+  document.getElementById("maxKey").textContent = Math.max(0, PANELS.length-1);
+
+  /* ---- static grid ---- */
+  var grid = document.getElementById("grid");
+  grid.innerHTML = PANELS.map(function(p,i){
+    return '<div class="panel" id="panel-'+i+'"><div class="phead"><div class="pk">'+esc(p.pk)+'</div><div class="key">'+i+'</div></div>'+
+      '<h2 id="ph-'+i+'">'+p.h+'</h2><div class="bars" id="bars-'+i+'"></div></div>';
+  }).join("") +
+  '<div class="panel qa" id="panel-qa"><div class="phead"><div class="pk">Live Q&amp;A · <span id="qcount">0</span> question(s)</div><div class="key">Q</div></div>'+
+    '<h2>From the <em>room</em> — tap to mark answered</h2><div class="qlist" id="qlist"><div class="empty">No questions yet — the floor is quiet.</div></div></div>';
+
+  /* strip columns = number of stats */
+  document.getElementById("strip").style.gridTemplateColumns = "repeat(3, 1fr)";
+
+  /* ---- gate ---- */
+  var gate=null, gateChipsEl=document.getElementById("gateChips"), gateStateEl=document.getElementById("gateState"), openNextBtn=document.getElementById("openNext");
+  function renderGate(){
+    var html="";
+    for(var i=0;i<=MAX_GATE;i++){ var lit=gate!==null&&i<=gate, now=gate!==null&&i===gate; html+='<button data-cp="'+i+'" class="'+(lit?"lit":"")+(now?" now":"")+'">CP'+i+"</button>"; }
+    gateChipsEl.innerHTML=html;
+    gateChipsEl.querySelectorAll("button").forEach(function(b){ b.addEventListener("click", function(){ setGate(parseInt(b.getAttribute("data-cp"),10)); }); });
+    openNextBtn.disabled = gate===null || gate>=MAX_GATE;
+    gateStateEl.innerHTML = gate===null ? "gate: connecting…" : "open through <b>CP"+gate+"</b>"+(gate>=MAX_GATE?" — all open":" · next: CP"+(gate+1));
+  }
+  function setGate(n){ if(!sb) return; sb.from(T.state).upsert({ event:EVENT, open_checkpoint:n, updated_at:new Date().toISOString() }, { onConflict:"event" }).then(function(res){ if(res.error){ console.warn("gate update failed", res.error); return; } gate=n; renderGate(); }, function(err){ console.warn("gate update error", err); }); }
+  /* ensure this event has a gate row (starts closed at CP0) without resetting a live one */
+  function seedGate(){ if(sb) sb.from(T.state).upsert({ event:EVENT, open_checkpoint:0 }, { onConflict:"event", ignoreDuplicates:true }).then(function(){}, function(){}); }
+  openNextBtn.addEventListener("click", function(){ if(gate!==null && gate<MAX_GATE) setGate(gate+1); });
+  renderGate();
+
+  /* ---- aggregation ---- */
+  function emptyCounts(){ var c={}; PANELS.forEach(function(p){ c[p.id]={}; }); return c; }
+  function aggregate(rows){
+    var agg={ devices:{}, completed:0, c:emptyCounts() };
+    function bump(id,key){ if(key==null||!agg.c[id]) return; agg.c[id][key]=(agg.c[id][key]||0)+1; }
+    (rows||[]).forEach(function(r){
+      if(r.device_id) agg.devices[r.device_id]=1;
+      if(r.checkpoint==="done"){ agg.completed++; return; }
+      var f=null; for(var i=0;i<FLOW.length;i++){ if(FLOW[i].id===r.checkpoint){ f=FLOW[i]; break; } }
+      if(!f) return;
+      var a=r.answer||{};
+      if(f.type==="single") bump(f.id, a.choice);
+      else if(f.type==="multi") (a.choices||[]).forEach(function(k){ bump(f.id,k); });
+      else if(f.type==="quiz") bump(f.id, a.verdict);
+    });
+    agg.registered = Object.keys(agg.devices).length;
+    return agg;
+  }
+
+  /* ---- strip ---- */
+  function stripHTML(agg){
+    var inProg = Math.max(0, agg.registered - agg.completed);
+    return '<div class="stat hero"><div class="slab">In the room</div><div class="sval">'+agg.registered+' <span class="unit">devices</span></div></div>'+
+      '<div class="stat"><div class="slab">Completed</div><div class="sval">'+agg.completed+' <span class="unit">of '+agg.registered+'</span></div></div>'+
+      '<div class="stat"><div class="slab">In progress</div><div class="sval">'+inProg+'</div></div>';
+  }
+
+  /* ---- bars ---- */
+  function barsHTML(p, agg){
+    var counts=agg.c[p.id]||{}, max=0, topKey=null;
+    p.opts.forEach(function(o){ var c=counts[o.k]||0; if(c>max){ max=c; topKey=o.k; } });
+    return p.opts.map(function(o){
+      var c=counts[o.k]||0, pct=max?Math.round(c/max*100):0, tone=o.tone?" "+o.tone:"";
+      return '<div class="bar'+tone+(o.k===topKey&&c>0?" top":"")+'"><div class="blab">'+esc(o.n)+'</div>'+
+        '<div class="btrack"><div class="bfill" data-w="'+pct+'"></div></div><div class="bnum'+(c===0?" zero":"")+'">'+c+"</div></div>";
+    }).join("");
+  }
+  function hasAny(p, agg){ var c=agg.c[p.id]||{}; for(var k in c){ if(c[k]>0) return true; } return false; }
+
+  var lastAgg=null, focused=null;
+  function renderPanels(agg){
+    lastAgg=agg;
+    PANELS.forEach(function(p,i){
+      var box=document.getElementById("bars-"+i);
+      if(!hasAny(p, agg)){ box.innerHTML='<div class="empty">Waiting for the room…</div>'; return; }
+      box.innerHTML=barsHTML(p, agg);
+      requestAnimationFrame(function(){ box.querySelectorAll(".bfill").forEach(function(f){ f.style.width=f.getAttribute("data-w")+"%"; }); });
+    });
+  }
+
+  /* ---- Q&A ---- */
+  var questions=[];
+  function renderQA(){
+    var box=document.getElementById("qlist"), waiting=questions.filter(function(q){ return !q.answered; }).length;
+    document.getElementById("qcount").textContent=waiting; document.getElementById("qaWait").textContent=waiting;
+    document.getElementById("qaChip").classList.toggle("hot", waiting>0);
+    if(!questions.length){ box.innerHTML='<div class="empty">No questions yet — the floor is quiet.</div>'; return; }
+    box.innerHTML=questions.map(function(q){
+      return '<div class="qitem'+(q.answered?" answered":"")+'" data-id="'+esc(q.id)+'"><div class="qwho">'+esc(q.name||"Anonymous")+(q.company?' <span class="qco">· '+esc(q.company)+"</span>":"")+"</div>"+
+        '<div class="qtxt">'+esc(q.text)+"</div></div>";
+    }).join("");
+    box.querySelectorAll(".qitem").forEach(function(el){ el.addEventListener("click", function(){
+      var id=el.getAttribute("data-id"), q=null; questions.forEach(function(x){ if(""+x.id===id) q=x; }); if(!q) return;
+      var next=!q.answered; q.answered=next; renderQA();
+      if(sb) sb.from(T.questions).update({ answered:next }).eq("id",q.id).then(function(res){ if(res.error){ console.warn("mark answered failed", res.error); q.answered=!next; renderQA(); } }, function(){ q.answered=!next; renderQA(); });
+    }); });
+  }
+
+  /* ---- polling ---- */
+  var liveDot=document.getElementById("liveDot"), liveLbl=document.getElementById("liveLbl"), lastGood=0;
+  function markStale(){ liveDot.classList.add("stale"); liveLbl.textContent="Reconnecting…"; }
+  function poll(){
+    if(!sb) return;
+    sb.from(T.answers).select("device_id,checkpoint,answer").eq("event",EVENT).then(function(res){
+      if(res.error){ console.warn("poll failed", res.error); markStale(); return; }
+      lastGood=Date.now(); liveDot.classList.remove("stale");
+      var agg=aggregate(res.data); liveLbl.textContent="Live · "+agg.registered+" in";
+      document.getElementById("strip").innerHTML=stripHTML(agg); renderPanels(agg);
+    }, function(err){ console.warn("poll error", err); markStale(); });
+    sb.from(T.state).select("open_checkpoint").eq("event",EVENT).maybeSingle().then(function(res){ if(!res.error&&res.data){ gate=res.data.open_checkpoint; renderGate(); } }, function(){});
+    sb.from(T.questions).select("id,created_at,name,company,text,answered").eq("event",EVENT).order("created_at",{ ascending:false }).then(function(res){ if(res.error){ console.warn("questions poll failed", res.error); return; } questions=res.data||[]; renderQA(); }, function(){});
+  }
+  setInterval(function(){ if(Date.now()-lastGood>15000) markStale(); }, 5000);
+  seedGate(); poll(); setInterval(poll, 4000);
+
+  /* ---- focus mode ---- */
+  function ids(){ var a=[]; for(var i=0;i<PANELS.length;i++) a.push("panel-"+i); a.push("panel-qa"); return a; }
+  function focusPanel(sel){
+    focused=sel; document.body.classList.add("focus");
+    ids().forEach(function(id){ document.getElementById(id).classList.toggle("focused", id===sel); });
+    if(lastAgg) renderPanels(lastAgg);
+  }
+  function unfocus(){ focused=null; document.body.classList.remove("focus"); ids().forEach(function(id){ document.getElementById(id).classList.remove("focused"); }); if(lastAgg) renderPanels(lastAgg); }
+  PANELS.forEach(function(p,i){ document.getElementById("panel-"+i).addEventListener("click", function(){ if(focused!=="panel-"+i) focusPanel("panel-"+i); }); });
+  document.getElementById("panel-qa").addEventListener("click", function(){ if(focused!=="panel-qa") focusPanel("panel-qa"); });
+  document.getElementById("qaChip").addEventListener("click", function(){ focusPanel("panel-qa"); });
+  document.addEventListener("keydown", function(e){
+    if(e.key>="0" && e.key<="9"){ var n=parseInt(e.key,10); if(n<PANELS.length) focusPanel("panel-"+n); }
+    else if(e.key==="q"||e.key==="Q"){ focusPanel("panel-qa"); }
+    else if(e.key==="Escape"){ unfocus(); }
+  });
+
+  /* initial zero-state */
+  var zero=aggregate([]);
+  document.getElementById("strip").innerHTML=stripHTML(zero); renderPanels(zero);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:ital,wght@0,300..700;1,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<script src="config.js"></script>
+<!-- ============================================================================
+     STARTER DECK — replaceable. This is a plain slide engine with a few sample
+     slides. Swap it for your own deck (e.g. built with the frontend-slides skill)
+     in any theme; the phone companion + presenter view don't depend on it. If you
+     keep this engine, just edit the <section class="slide"> blocks below.
+     Only contract: link your deck from config.js (brand.links) and put a QR to
+     index.html on a slide.
+     ============================================================================ -->
+<style>
+  /* Shared brand knobs (accent, fonts, --ink-strong, --paper) come from theme.css. */
+  :root{
+    --body:     #5a5872;
+    --hairline: #e7e7e7;
+    --stage-bg: #141227;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ width:100%; height:100%; margin:0; overflow:hidden; background:var(--stage-bg); }
+  body{ font-family:var(--sans); color:var(--ink-strong); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+  .deck-viewport{ position:fixed; inset:0; overflow:hidden; background:var(--stage-bg); }
+  .deck-stage{ position:absolute; left:0; top:0; width:1920px; height:1080px; overflow:hidden; transform-origin:0 0; background:var(--paper); }
+  .slide{ position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; visibility:hidden; opacity:0; pointer-events:none; background:var(--paper); transition:opacity .35s ease; }
+  .slide.visible{ visibility:visible; opacity:1; pointer-events:auto; z-index:1; }
+
+  .progress{ position:fixed; left:0; bottom:0; height:4px; width:0%; background:var(--accent); z-index:1001; transition:width .3s var(--ease); }
+  .counter{ position:fixed; right:26px; bottom:16px; z-index:1001; font-family:var(--mono); font-size:14px; letter-spacing:.08em; color:rgba(252,251,249,.75); }
+
+  /* reveal */
+  .reveal{ opacity:0; transform:translateY(26px); transition:opacity .6s var(--ease), transform .6s var(--ease); }
+  .slide.visible .reveal{ opacity:1; transform:translateY(0); }
+  .r1{ transition-delay:.08s } .r2{ transition-delay:.18s } .r3{ transition-delay:.28s } .r4{ transition-delay:.38s } .r5{ transition-delay:.48s }
+
+  /* slide furniture */
+  .pad{ position:absolute; inset:96px 120px; display:flex; flex-direction:column; }
+  .masthead{ display:flex; justify-content:space-between; align-items:center; }
+  .wm{ font-weight:700; font-size:26px; letter-spacing:-0.01em; color:var(--ink-strong); }
+  .section{ font-size:14px; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:var(--body); }
+  .rule{ height:2px; background:var(--hairline); margin-top:22px; }
+  .colophon{ margin-top:auto; display:flex; justify-content:space-between; align-items:baseline; font-size:16px; color:var(--body); }
+  .colophon .folio{ font-family:var(--mono); letter-spacing:.06em; }
+
+  .kicker{ display:flex; align-items:center; gap:18px; font-size:18px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--accent); }
+  .kicker::before{ content:""; width:52px; height:3px; background:var(--accent); }
+  h1{ font-family:var(--serif); font-optical-sizing:auto; font-weight:560; letter-spacing:-0.02em; line-height:1.04; color:var(--ink-strong); }
+  h1 em{ font-style:italic; font-weight:440; color:var(--accent); }
+  .center{ justify-content:center; }
+  .lead{ font-size:30px; line-height:1.5; color:var(--body); max-width:1200px; }
+
+  .bignum{ font-family:var(--serif); font-size:200px; font-weight:540; color:var(--accent); line-height:1; }
+
+  .points{ list-style:none; margin-top:20px; display:flex; flex-direction:column; gap:26px; }
+  .points li{ display:flex; gap:24px; align-items:flex-start; font-size:30px; line-height:1.4; color:var(--ink-strong); }
+  .points li b{ font-weight:600; }
+  .points .dot{ width:14px; height:14px; border-radius:50%; background:var(--accent); margin-top:14px; flex:none; }
+  .sub{ color:var(--body); font-size:24px; display:block; margin-top:4px; }
+
+  /* dark slide variant */
+  .slide.dark{ background:var(--ink-strong); }
+  .slide.dark .wm, .slide.dark h1{ color:var(--paper); }
+  .slide.dark .section, .slide.dark .colophon, .slide.dark .lead{ color:rgba(252,251,249,.6); }
+  .slide.dark .rule{ background:rgba(252,251,249,.16); }
+
+  /* companion / QR slide */
+  .join{ display:flex; gap:80px; align-items:center; margin-top:40px; }
+  .qr{ width:300px; height:300px; border:2px solid var(--ink-strong); display:flex; align-items:center; justify-content:center; text-align:center; font-family:var(--mono); font-size:15px; color:var(--body); padding:20px; flex:none; }
+  .join .lead b{ color:var(--ink-strong); }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+  <main class="deck-stage" id="deckStage">
+
+    <!-- 1 · TITLE -->
+    <section class="slide dark">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section" data-tagline></div></div>
+        <div class="rule"></div>
+        <div class="center" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div class="kicker reveal r1" data-tagline></div>
+          <h1 class="reveal r2" style="font-size:120px; margin-top:30px;">Session <em>title</em><br>goes here.</h1>
+          <p class="lead reveal r3" style="margin-top:40px;">A one-line promise for the room — what they’ll leave knowing.</p>
+        </div>
+        <div class="colophon"><span data-presenter></span><span class="folio">01</span></div>
+      </div>
+    </section>
+
+    <!-- 2 · WHAT TO EXPECT -->
+    <section class="slide">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section">Roadmap</div></div>
+        <div class="rule"></div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div class="kicker reveal r1">What to expect</div>
+          <ul class="points reveal r2" style="margin-top:40px;">
+            <li><span class="dot"></span><div><b>Three checkpoints.</b><span class="sub">Grab your phone — you’ll answer as we go.</span></div></li>
+            <li><span class="dot"></span><div><b>Live on the big screen.</b><span class="sub">The room’s answers show up in real time.</span></div></li>
+            <li><span class="dot"></span><div><b>A summary card at the end.</b><span class="sub">Yours to keep, plus our follow-up.</span></div></li>
+          </ul>
+        </div>
+        <div class="colophon"><span>Roadmap</span><span class="folio">02</span></div>
+      </div>
+    </section>
+
+    <!-- 3 · A CONTENT SLIDE -->
+    <section class="slide">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section">Section 01</div></div>
+        <div class="rule"></div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div class="kicker reveal r1">The one idea</div>
+          <h1 class="reveal r2" style="font-size:96px; margin-top:24px;">Make your <em>point</em> land<br>in a single line.</h1>
+          <p class="lead reveal r3" style="margin-top:36px;">Then support it below — but keep the headline doing the work.</p>
+        </div>
+        <div class="colophon"><span>Section 01</span><span class="folio">03</span></div>
+      </div>
+    </section>
+
+    <!-- 4 · BIG NUMBER -->
+    <section class="slide">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section">Section 01</div></div>
+        <div class="rule"></div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div class="bignum reveal r1">42%</div>
+          <p class="lead reveal r2" style="margin-top:24px; font-size:36px; color:var(--ink-strong);">A stat worth pausing on — swap in your own.</p>
+        </div>
+        <div class="colophon"><span>Section 01</span><span class="folio">04</span></div>
+      </div>
+    </section>
+
+    <!-- 5 · JOIN THE COMPANION -->
+    <section class="slide">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section">Join in</div></div>
+        <div class="rule"></div>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div class="kicker reveal r1">Grab your phone</div>
+          <div class="join reveal r2">
+            <div class="qr">Replace with a QR<br>code image pointing<br>at index.html</div>
+            <p class="lead" style="font-size:34px;">Open the <b>live companion</b> and answer along.<br>Your responses show up on the screen — anonymously, in aggregate.</p>
+          </div>
+        </div>
+        <div class="colophon"><span>Join in</span><span class="folio">05</span></div>
+      </div>
+    </section>
+
+    <!-- 6 · CLOSING -->
+    <section class="slide dark">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section">Thank you</div></div>
+        <div class="rule"></div>
+        <div class="center" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <h1 class="reveal r1" style="font-size:120px;">Thank <em>you.</em></h1>
+          <p class="lead reveal r2" style="margin-top:36px; color:rgba(252,251,249,.7);">Your summary card is on your phone — we’ll be in touch.</p>
+        </div>
+        <div class="colophon"><span data-presenter></span><span class="folio">06</span></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter">01 / 06</div>
+
+<script>
+/* hydrate brand text from config.js */
+(function(){
+  var b = (window.DECK_CONFIG && window.DECK_CONFIG.brand) || {};
+  document.title = (b.name || "Deck");
+  function fill(sel, val){ document.querySelectorAll(sel).forEach(function(el){ if(val) el.textContent = val; }); }
+  fill("[data-brand]", b.name);
+  fill("[data-tagline]", b.tagline);
+  fill("[data-presenter]", b.presenter);
+})();
+
+/* slide engine */
+class SlidePresentation {
+  constructor(){
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.stage = document.getElementById('deckStage');
+    this.progress = document.getElementById('progress');
+    this.counter = document.getElementById('counter');
+    this.current = 0;
+    this.scale(); window.addEventListener('resize', () => this.scale());
+    this.keys(); this.touch();
+    const h = parseInt((location.hash||'').replace('#',''),10);
+    this.show(Number.isFinite(h) && h>=1 && h<=this.slides.length ? h-1 : 0);
+  }
+  scale(){
+    const f = Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    const x = (window.innerWidth-1920*f)/2, y = (window.innerHeight-1080*f)/2;
+    this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+  }
+  keys(){
+    document.addEventListener('keydown', (e) => {
+      if(e.metaKey||e.ctrlKey||e.altKey) return;
+      switch(e.key){
+        case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown': e.preventDefault(); this.show(this.current+1); break;
+        case 'ArrowLeft': case 'ArrowUp': case 'PageUp': e.preventDefault(); this.show(this.current-1); break;
+        case 'Home': e.preventDefault(); this.show(0); break;
+        case 'End': e.preventDefault(); this.show(this.slides.length-1); break;
+      }
+    });
+  }
+  touch(){
+    let x0=null;
+    document.addEventListener('touchstart', (e)=>{ x0=e.touches[0].clientX; }, {passive:true});
+    document.addEventListener('touchend', (e)=>{ if(x0===null) return; const dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>60)(dx<0?this.show(this.current+1):this.show(this.current-1)); x0=null; }, {passive:true});
+  }
+  show(i){
+    this.current = Math.max(0, Math.min(i, this.slides.length-1));
+    this.slides.forEach((s,j)=> s.classList.toggle('visible', j===this.current));
+    const n=this.current+1, total=this.slides.length;
+    this.progress.style.width = (n/total*100)+'%';
+    this.counter.textContent = String(n).padStart(2,'0')+' / '+total;
+    history.replaceState(null,'','#'+n);
+  }
+}
+window.deck = new SlidePresentation();
+</script>
+</body>
+</html>
