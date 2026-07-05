@@ -46,7 +46,9 @@ backend. Nobody edits HTML to change a question — it all comes from that file.
 
 5. **Build the deck** with the `frontend-slides` skill on their topic — this is the creative
    part, spend real effort. Put a **QR code linking to `index.html`** on one slide so the
-   room can join the companion.
+   room can join the companion. **End the deck with an exit-ramp slide** (the template's
+   closing "Before you go" slide is the model): a "more from the speaker" panel linking to
+   their site/resources page, so a visitor who reaches the last slide never dead-ends.
 
 6. **Deploy** to *their* GitHub Pages: new repo, push the `app/` contents, add an empty
    **`.nojekyll`** at the served root, enable Settings → Pages. Hand them the three live URLs.
@@ -58,5 +60,10 @@ backend. Nobody edits HTML to change a question — it all comes from that file.
   copy them verbatim; only `config.js` (and optionally `theme.css`) change per talk.
 - **Only ever ship the *publishable* Supabase key** — never the service-role key.
 - **Every talk gets its own `event` slug** — reusing one mixes data together.
+- **Keep the exit ramp.** `config.js → exitRamp` drives a small always-on badge (all three
+  pages) plus a "more from the speaker" link on the companion's final card, and the deck
+  ends on an exit-ramp slide — so no page ever dead-ends a visitor. It ships pointing at
+  the template author's site (nicholaschong.xyz); if the speaker has their own home page,
+  swap the URLs (config + closing slide) to theirs. Don't delete it — repoint it.
 
 The template's `CLAUDE.md` and `SETUP.md` hold the full first-run detail — read them if unsure.

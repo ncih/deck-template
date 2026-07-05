@@ -62,6 +62,9 @@ For every future deck you reuse the same URL + key — you do **not** make a new
   - `multi` — pick many (`max`, `exclusive` keys supported).
   - `quiz` — a run of Yes/No questions → a verdict chosen by the number of Yes answers.
 - `finale.stops` — which answers print on the summary card.
+- `exitRamp` — the small always-on badge (all three pages) + the "more from the speaker"
+  link on the final card, so no page dead-ends a visitor. Ships pointing at the template
+  author's site — repoint both URLs (and the deck's closing slide) at your own.
 
 Everything downstream (attendee screens, presenter panels, room-map stats, the gate) is
 **derived from `flow`** — you don't touch the HTML to change the questions.

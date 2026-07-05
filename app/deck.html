@@ -76,6 +76,11 @@
   .join{ display:flex; gap:80px; align-items:center; margin-top:40px; }
   .qr{ width:300px; height:300px; border:2px solid var(--ink-strong); display:flex; align-items:center; justify-content:center; text-align:center; font-family:var(--mono); font-size:15px; color:var(--body); padding:20px; flex:none; }
   .join .lead b{ color:var(--ink-strong); }
+
+  /* exit-ramp closing slide */
+  .ramp-links{ margin-top:52px; display:flex; align-items:center; gap:26px; flex-wrap:wrap; }
+  .ramp-link{ display:inline-block; font-family:var(--mono); font-size:20px; font-weight:500; letter-spacing:.02em; color:var(--paper); background:var(--accent); padding:18px 30px; text-decoration:none; }
+  .ramp-link.ghost{ background:transparent; color:var(--ink-strong); border:2px solid var(--ink-strong); }
 </style>
 </head>
 <body>
@@ -169,10 +174,32 @@
       </div>
     </section>
 
+    <!-- 7 · EXIT RAMP — the standard closing panel so no visitor dead-ends.
+         Keep this slide (or an equivalent) on every deck built from this
+         template. The links ship aimed at the template author's site — same
+         defaults as config.js -> exitRamp; swap them for the speaker's own
+         home + resources page if they have one. -->
+    <section class="slide">
+      <div class="pad">
+        <div class="masthead"><div class="wm" data-brand></div><div class="section">Before you go</div></div>
+        <div class="rule"></div>
+        <div class="center" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <div class="kicker reveal r1">More from Nicholas</div>
+          <h1 class="reveal r2" style="font-size:96px; margin-top:28px;">More where <em>this came from.</em></h1>
+          <p class="lead reveal r3" style="margin-top:30px;">This talk ran on a free, open presenter kit — one of the tools I build and share. They all live on one page.</p>
+          <div class="ramp-links reveal r4">
+            <a class="ramp-link" href="https://nicholaschong.xyz/resources" target="_blank" rel="noopener">Browse the free resources →</a>
+            <a class="ramp-link ghost" href="https://nicholaschong.xyz" target="_blank" rel="noopener">nicholaschong.xyz →</a>
+          </div>
+        </div>
+        <div class="colophon"><span data-presenter></span><span class="folio">07</span></div>
+      </div>
+    </section>
+
   </main>
 </div>
 <div class="progress" id="progress"></div>
-<div class="counter" id="counter">01 / 06</div>
+<div class="counter" id="counter">01 / 07</div>
 
 <script>
 /* hydrate brand text from config.js */
@@ -183,6 +210,19 @@
   fill("[data-brand]", b.name);
   fill("[data-tagline]", b.tagline);
   fill("[data-presenter]", b.presenter);
+})();
+
+/* Exit-ramp badge — the small always-there link home. Config-driven
+   (config.js -> exitRamp.badge) so the engine hardcodes no author URL;
+   styled once in theme.css (.exit-badge). No config block, no badge. */
+(function(){
+  var er = (window.DECK_CONFIG && window.DECK_CONFIG.exitRamp) || {};
+  if (!er.badge || !er.badge.href) return;
+  var a = document.createElement('a');
+  a.className = 'exit-badge';
+  a.href = er.badge.href; a.target = '_blank'; a.rel = 'noopener';
+  a.textContent = er.badge.label || er.badge.href.replace(/^https?:\/\//,'');
+  document.body.appendChild(a);
 })();
 
 /* slide engine */

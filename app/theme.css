@@ -34,3 +34,26 @@
   --sans:  "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
   --mono:  "IBM Plex Mono", ui-monospace, monospace;
 }
+
+/* =============================================================================
+   EXIT-RAMP BADGE — the small always-there link back to the author's site.
+   All three pages render it ONLY when config.js defines `exitRamp.badge`;
+   remove that config block and no badge appears anywhere. The look lives here
+   once so deck/companion/presenter stay in step; each page positions it where
+   its own chrome has room (deck: top-right; companion: bottom-left; presenter:
+   inline in the footer via the --inline variant).
+   ============================================================================= */
+.exit-badge{
+  position:fixed; top:14px; right:16px; z-index:1001;
+  font-family:var(--mono); font-size:11px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; text-decoration:none;
+  color:var(--paper); background:var(--ink-strong);
+  border:1.5px solid rgba(250,248,242,.4);
+  padding:6px 11px; opacity:.66; transition:opacity .2s ease;
+}
+.exit-badge:hover, .exit-badge:focus-visible{ opacity:1; }
+.exit-badge--inline{
+  position:static; display:inline; background:none; border:0; padding:0;
+  font:inherit; letter-spacing:inherit; text-transform:none; color:inherit;
+  opacity:.85; text-decoration:underline; text-underline-offset:2px;
+}

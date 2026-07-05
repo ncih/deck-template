@@ -92,6 +92,11 @@ This is the creative part — spend real effort here, it's most of what the audi
 - Put a **QR code linking to `index.html`** on one slide so the room can join the companion.
 - Set `config.js → brand.links` to point at their deck (this is the "view slides" link shown
   on the attendee summary card).
+- **Keep the exit ramp.** The starter deck ends on a "Before you go" slide, and
+  `config.js → exitRamp` renders a small always-on badge on all three pages plus a "more
+  from the speaker" link on the companion's final card — so no page dead-ends a visitor.
+  Rebuild that closing slide in their deck's own look, and if they have their own home
+  page, repoint the exit-ramp URLs (config + closing slide) to it. Repoint, don't remove.
 
 The deck is independent of the audience layer — any look works, as long as those two things
 are true.

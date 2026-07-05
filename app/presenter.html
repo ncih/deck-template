@@ -154,6 +154,19 @@
   document.getElementById("brandWord").textContent = (CFG.brand&&CFG.brand.name)||"";
   document.getElementById("title").innerHTML = "<em>"+esc((CFG.presenter&&CFG.presenter.title)||"Live Room Map")+"</em>";
   document.getElementById("footLbl").textContent = (CFG.presenter&&CFG.presenter.footer)||"";
+  /* Exit ramp — a plain link home appended to the footer label
+     (config.js -> exitRamp.badge; inline variant styled in theme.css). */
+  (function(){
+    var er = CFG.exitRamp || {};
+    if (!er.badge || !er.badge.href) return;
+    var lbl = document.getElementById("footLbl");
+    lbl.appendChild(document.createTextNode(" \u00b7 "));
+    var a = document.createElement("a");
+    a.className = "exit-badge exit-badge--inline";
+    a.href = er.badge.href; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = er.badge.label || er.badge.href.replace(/^https?:\/\//,"");
+    lbl.appendChild(a);
+  })();
 
   function esc(s){ return (""+(s==null?"":s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 

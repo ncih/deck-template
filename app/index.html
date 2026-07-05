@@ -199,6 +199,16 @@
   .donote{ margin-top:22px; text-align:center; font-family:var(--serif); font-style:italic; font-size:14px; color:var(--body); line-height:1.6; }
   .donote b{ font-style:normal; font-weight:560; color:var(--ink-strong); }
 
+  /* exit ramp (config.js -> exitRamp): reposition the shared theme.css badge
+     for a phone — bottom-left, clear of the Q&A fab (bottom-right), and UNDER
+     the Q&A sheet / tour veils (z 70+) so it never covers an interaction. */
+  .exit-badge{ top:auto; right:auto; left:14px; bottom:calc(14px + env(safe-area-inset-bottom)); z-index:55; }
+  /* the quiet "more from the author" link closing the end screen */
+  .endmore{ display:block; margin-top:16px; padding-top:14px; border-top:1px solid var(--hairline); text-align:center;
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; color:var(--body); }
+  .endmore .arr{ color:var(--accent); }
+  .endmore:active{ opacity:.65; }
+
   /* quiet ask-a-question text link on the end screen (replaces the heavy dark box) */
   .qa-textlink{ display:block; width:100%; text-align:left; background:none; border:none; border-top:1px solid var(--hairline);
     margin-top:22px; padding:15px 2px 0; cursor:pointer; font-family:var(--sans); font-size:13.5px; line-height:1.5; color:var(--body); }
@@ -282,6 +292,19 @@
 (function(){
   "use strict";
   var CFG = window.DECK_CONFIG || {};
+
+  /* Exit-ramp badge — small always-there link home (config.js -> exitRamp.badge).
+     Config-driven so this engine file hardcodes no author URL; styled in
+     theme.css, repositioned for phones in the CSS above. */
+  (function(){
+    var er = CFG.exitRamp || {};
+    if (!er.badge || !er.badge.href) return;
+    var a = document.createElement('a');
+    a.className = 'exit-badge';
+    a.href = er.badge.href; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = er.badge.label || er.badge.href.replace(/^https?:\/\//,'');
+    document.body.appendChild(a);
+  })();
   var FLOW = CFG.flow || [];
   var PFX  = (CFG.storagePrefix || "deck") + "_";
   /* one shared DB for all presentations; every row is tagged with this event */
@@ -557,7 +580,7 @@
   var IC_DL = '<span class="ic-dl"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>';
   var IC_OK = '<span class="ic-ok"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
   function renderCard(){
-    var fin = CFG.finale||{}, b = CFG.brand||{};
+    var fin = CFG.finale||{}, b = CFG.brand||{}, er = CFG.exitRamp||{};
     if(!S.answers["done"]) saveAnswer("done", { finale:true });
     var stopsHTML = (fin.stops||[]).map(function(s){ return rcStop(s.label, cardValue(s.cp)); }).join("");
     var links = (b.links||[]).map(function(l,i){ return '<a class="biglink '+(l.primary?"primary":"secondary")+'" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+"</a>"; }).join("");
@@ -574,7 +597,9 @@
       '<div class="savehint" id="saveHint">Couldn’t render the image on this phone — just screenshot this card. It’s yours.</div>'+
       (links?'<div class="endlinks">'+links+"</div>":"")+
       '<button type="button" class="qa-textlink" id="cardQaPrompt">Got a question? <b>Ask it — it lands live on the slides</b> <span class="arr">→</span></button>'+
-      '<p class="donote" id="doneNote">'+(fin.note||"All set.")+"</p></div>";
+      '<p class="donote" id="doneNote">'+(fin.note||"All set.")+"</p>"+
+      (er.more && er.more.href ? '<a class="endmore" href="'+esc(er.more.href)+'" target="_blank" rel="noopener">'+esc(er.more.label||er.more.href)+' <span class="arr">\u2192</span></a>' : "")+
+      "</div>";
     bindBack(function(){ nav(prevScreen("card")); });
     document.getElementById("saveImg").addEventListener("click", saveCardImage);
     document.getElementById("cardQaPrompt").addEventListener("click", function(){ qaFab.click(); });
