@@ -24,6 +24,12 @@ That's the whole pitch — so make it true.
   once it's installed.
 - **Nice to have: `frontend-design`.** Not required, but if it's available, use it alongside
   `frontend-slides` for extra visual polish on the deck.
+- **Install the `presenter-kit` skill (so next time is one command).** This repo ships a skill
+  at `skills/presenter-kit/` that scaffolds a *new* talk from this template. Install it for
+  them now — copy it into their skills folder:
+  `cp -R <this-repo>/skills/presenter-kit ~/.claude/skills/presenter-kit` — the same reload/
+  restart you're already doing for `frontend-slides` picks it up. From then on they build
+  their next talk by just running **`/presenter-kit`**, no re-pasting a long prompt.
 
 ## What this is
 
@@ -110,6 +116,19 @@ Point them at `app/README.md` for the full presenter ops guide, and summarize th
 - The companion QR (on their deck slide) is what the room scans to join.
 - After the session, export their leads straight from Supabase: **SQL Editor** →
   `select * from public.pres_leads where event = 'their-event-slug';` → export as CSV.
+
+## Making another deck (next time)
+
+The first run installs two skills globally on their machine — `frontend-slides` and this
+`presenter-kit` skill — and clones this template. So the *next* talk skips all the setup above.
+They just:
+
+> Open Claude Code and run **`/presenter-kit`** — say what the new talk is about.
+
+That skill copies the template to a fresh folder, reuses their already-installed
+`frontend-slides` and their existing Supabase (with a new `event` slug), writes the new
+`config.js`, builds the deck with them, and deploys. Point them there whenever they say
+"make me another one."
 
 ## Guardrails
 

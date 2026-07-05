@@ -44,10 +44,10 @@ window.DECK_CONFIG = {
     presenter:  "Presenter",                 // used in gate/waiting copy
     logo:       "brand-logo.svg",            // dark logo (attendee, light bg)
     logoWhite:  "brand-logo.svg",            // light logo (dark bg: card head, presenter)
-    // shown on the finale card end-screen:
+    // shown on the finale card end-screen (the attendee's take-away):
     links: [
-      { label: "View today's slides →", href: "deck.html", primary: true },
-      { label: "Get in touch →",         href: "https://example.com", primary: false }
+      { label: "Get the slides →",          href: "deck.html", primary: true },
+      { label: "Connect with the speaker →", href: "#", primary: false }  // set to your link (site, LinkedIn, Calendly…)
     ]
   },
 

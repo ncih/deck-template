@@ -28,11 +28,14 @@
 
   /* masthead */
   .masthead{ padding-top:calc(18px + env(safe-area-inset-top)); }
-  .masthead .row{ display:flex; justify-content:space-between; align-items:center; }
+  .masthead .row{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
   .wordmark{ font-weight:700; font-size:16px; letter-spacing:-0.01em; color:var(--ink-strong); }
   .hero-logo{ font-weight:700; font-size:22px; letter-spacing:-0.02em; color:var(--ink-strong); margin:2px 0 24px; }
-  .masthead .section{ font-size:9px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--body); }
+  .masthead .section{ font-size:9px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--body); line-height:1.5; max-width:280px; }
   .masthead .line{ height:1px; background:var(--hairline); margin-top:12px; }
+  .backtoslides{ display:inline-flex; align-items:center; gap:5px; margin-top:8px; font-size:10px; font-weight:600;
+    letter-spacing:0.1em; color:var(--body); text-decoration:none; }
+  .backtoslides:active{ color:var(--accent-dark); }
 
   /* sync dot */
   .sync{ position:fixed; top:calc(10px + env(safe-area-inset-top)); right:10px; width:7px; height:7px; border-radius:50%;
@@ -89,6 +92,11 @@
   .chip.sel{ border-color:var(--accent); border-left:2px solid var(--accent); background:var(--accent-faint); }
   .chip.sel .cname{ color:var(--accent-dark); }
   .pickhint{ margin-top:12px; font-size:11px; color:#9a968e; letter-spacing:0.04em; text-align:center; }
+
+  /* open-text checkpoint */
+  .field textarea.textbox{ width:100%; font-family:var(--sans); font-size:16px; line-height:1.5; color:var(--ink-strong); background:#fff;
+    border:1px solid var(--hairline); border-radius:0; padding:13px 14px; min-height:132px; resize:vertical; outline:none; transition:border-color .2s; -webkit-appearance:none; appearance:none; }
+  .field textarea.textbox:focus{ border-color:var(--ink-strong); }
 
   /* buttons */
   .actions{ margin-top:26px; }
@@ -150,11 +158,23 @@
   .qa-sent.show{ display:block; }
 
   /* finale card */
-  .cardwrap{ margin-top:24px; padding-bottom:96px; }
+  .cardwrap{ margin-top:22px; padding-bottom:18px; }
   .route-card{ background:#fff; border:1px solid var(--hairline); box-shadow:0 1px 2px rgba(26,24,71,.06), 0 16px 40px -18px rgba(26,24,71,.22); }
   .rc-head{ background:var(--ink-strong); padding:16px 20px 14px; display:flex; justify-content:space-between; align-items:center; }
   .rc-head .wm{ color:var(--paper); font-weight:700; font-size:15px; letter-spacing:-0.01em; }
   .rc-head .lbl{ font-size:8.5px; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:rgba(252,251,249,.55); }
+  .rc-head-r{ display:flex; align-items:center; gap:12px; }
+  .rc-save{ background:transparent; border:1px solid rgba(252,251,249,.3); color:var(--paper); width:30px; height:30px; display:inline-flex;
+    align-items:center; justify-content:center; cursor:pointer; flex:none; padding:0; border-radius:0; -webkit-appearance:none; appearance:none;
+    transition:background .18s, border-color .18s, opacity .18s; }
+  .rc-save:hover{ border-color:rgba(252,251,249,.6); background:rgba(252,251,249,.08); }
+  .rc-save:active{ background:rgba(252,251,249,.16); }
+  .rc-save svg{ display:block; }
+  .rc-save .ic-ok{ display:none; }
+  .rc-save.saving{ opacity:.45; cursor:default; }
+  .rc-save.saved{ border-color:var(--good-soft); color:var(--good-soft); }
+  .rc-save.saved .ic-dl{ display:none; }
+  .rc-save.saved .ic-ok{ display:inline-flex; }
   .rc-id{ padding:20px 20px 16px; border-bottom:1px dashed #d8d5cf; position:relative; }
   .rc-id::before,.rc-id::after{ content:""; position:absolute; bottom:-7px; width:14px; height:14px; border-radius:50%; background:var(--paper); border:1px solid var(--hairline); }
   .rc-id::before{ left:-8px; } .rc-id::after{ right:-8px; }
@@ -178,13 +198,43 @@
   .savehint.show{ display:block; }
   .donote{ margin-top:22px; text-align:center; font-family:var(--serif); font-style:italic; font-size:14px; color:var(--body); line-height:1.6; }
   .donote b{ font-style:normal; font-weight:560; color:var(--ink-strong); }
-  .endlinks{ margin-top:22px; }
+
+  /* quiet ask-a-question text link on the end screen (replaces the heavy dark box) */
+  .qa-textlink{ display:block; width:100%; text-align:left; background:none; border:none; border-top:1px solid var(--hairline);
+    margin-top:22px; padding:15px 2px 0; cursor:pointer; font-family:var(--sans); font-size:13.5px; line-height:1.5; color:var(--body); }
+  .qa-textlink b{ color:var(--ink-strong); font-weight:600; }
+  .qa-textlink .arr{ color:var(--accent); font-weight:700; }
+  .qa-textlink:active{ opacity:.65; }
+
+  .endlinks{ margin-top:20px; }
   .biglink{ display:flex; align-items:center; justify-content:center; width:100%; padding:17px 18px; font-family:var(--sans); font-size:12.5px; font-weight:600;
     letter-spacing:0.14em; text-transform:uppercase; text-decoration:none; text-align:center; border-radius:0; transition:opacity .2s, background .2s; }
   .biglink + .biglink{ margin-top:11px; }
   .biglink.primary{ background:var(--ink-strong); color:var(--paper); }
   .biglink.secondary{ background:#fff; color:var(--ink-strong); border:1px solid var(--ink-strong); }
   .biglink:active{ opacity:.75; }
+
+  /* guided spotlight tour — fires once, on the first checkpoint */
+  .tour-veil{ position:fixed; inset:0; z-index:80; display:none; }
+  .tour-veil.show{ display:block; }
+  .tour-hole{ position:absolute; left:0; top:0; width:0; height:0; border-radius:6px;
+    box-shadow:0 0 0 3px var(--accent), 0 0 0 9999px rgba(12,12,24,.64);
+    transition:left .32s cubic-bezier(.22,.9,.35,1), top .32s cubic-bezier(.22,.9,.35,1), width .32s cubic-bezier(.22,.9,.35,1), height .32s cubic-bezier(.22,.9,.35,1);
+    pointer-events:none; }
+  .tour-skip{ position:absolute; top:calc(12px + env(safe-area-inset-top)); right:14px; z-index:82; background:none; border:none;
+    font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#fff; opacity:.85; cursor:pointer; }
+  .tour-pop{ position:absolute; z-index:82; width:300px; max-width:calc(100vw - 28px); background:var(--paper); border:1px solid var(--ink-strong);
+    box-shadow:0 20px 44px -16px rgba(10,10,20,.6); padding:16px 18px 14px; }
+  .tour-pop .tk{ font-size:9px; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--accent); }
+  .tour-pop .tt{ margin-top:8px; font-family:var(--serif); font-optical-sizing:auto; font-size:16px; font-weight:500; line-height:1.45; color:var(--ink-strong); }
+  .tour-pop .tt b{ color:var(--accent); font-weight:600; }
+  .tour-pop .trow{ display:flex; align-items:center; justify-content:space-between; margin-top:16px; }
+  .tour-dots{ display:flex; gap:6px; }
+  .tour-dots i{ width:6px; height:6px; border-radius:50%; background:#d3d0c9; transition:background .2s; }
+  .tour-dots i.on{ background:var(--accent); }
+  .tour-next{ font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
+    background:var(--ink-strong); color:var(--paper); border:none; padding:11px 18px; cursor:pointer; }
+  .tour-next:active{ opacity:.8; }
 </style>
 </head>
 <body>
@@ -195,6 +245,7 @@
         <div class="wordmark" id="brandWord"></div>
         <div class="section" id="brandTag"></div>
       </div>
+      <a class="backtoslides" href="deck.html">&#8592; back to the slides</a>
       <div class="line"></div>
     </header>
     <div class="progress" id="progress" style="display:none">
@@ -214,6 +265,16 @@
         <button class="btn ghost" id="qaCancel" style="margin-top:0">Close</button>
         <button class="btn primary" id="qaSend">Send it</button>
       </div>
+    </div>
+  </div>
+
+  <div class="tour-veil" id="tourVeil">
+    <div class="tour-hole" id="tourHole"></div>
+    <button class="tour-skip" id="tourSkip" type="button">Skip</button>
+    <div class="tour-pop" id="tourPop">
+      <div class="tk" id="tourK">Quick tour</div>
+      <div class="tt" id="tourT"></div>
+      <div class="trow"><div class="tour-dots" id="tourDots"></div><button class="tour-next" id="tourNext" type="button">Next</button></div>
     </div>
   </div>
 
@@ -401,6 +462,22 @@
     document.getElementById("cont").addEventListener("click", function(){ if(sel.length){ saveAnswer(f.id,{ choices:sel.slice() }); nav(nextScreen(f.id)); } });
   }
 
+  function renderText(f){
+    var current = (S.answers[f.id] && typeof S.answers[f.id].text==="string") ? S.answers[f.id].text : "";
+    app.innerHTML = '<div class="step">'+backHTML()+
+      '<div class="kicker">'+esc(f.kicker||"")+(f.cp?' <span class="cp">· '+esc(f.cp)+"</span>":"")+"</div>"+
+      '<h1 class="title">'+(f.title||"")+"</h1>"+
+      (f.lede?'<p class="lede">'+f.lede+"</p>":"")+
+      '<div class="form"><div class="field"><label>Your answer'+(f.optional?' <span class="opt">· optional</span>':"")+"</label>"+
+        '<textarea id="txt" class="textbox" placeholder="'+esc(f.placeholder||"Type it here…")+'" maxlength="600">'+esc(current)+"</textarea></div></div>"+
+      '<div class="actions"><button class="btn primary" id="cont">'+esc(f.cta||"Continue")+"</button>"+
+        (f.optional?'<button class="btn ghost" id="skip">Skip this one</button>':"")+"</div></div>";
+    bindBack(function(){ nav(prevScreen(f.id)); });
+    function go(){ var v=(document.getElementById("txt").value||"").trim(); saveAnswer(f.id,{ text:v }); nav(nextScreen(f.id)); }
+    document.getElementById("cont").addEventListener("click", go);
+    var sk=document.getElementById("skip"); if(sk) sk.addEventListener("click", function(){ saveAnswer(f.id,{ text:"" }); nav(nextScreen(f.id)); });
+  }
+
   function verdictFor(f, yes){
     var vs = (f.verdicts||[]).slice().sort(function(a,b){ return b.min-a.min; });
     for(var i=0;i<vs.length;i++){ if(yes>=vs[i].min) return vs[i]; }
@@ -465,14 +542,20 @@
     if(f.type==="single"){ var o=optByKey(f.options, a.choice); return o?o.n:(a.choice||"—"); }
     if(f.type==="multi"){ return (a.choices||[]).map(function(k){ var o=optByKey(f.options,k); return o?o.n:k; }).join(" · ") || "—"; }
     if(f.type==="quiz"){ return a.verdict || "—"; }
+    if(f.type==="text"){ return (a.text||"").trim() || "—"; }
     return "—";
   }
   function rcStop(lab,val){ return '<div class="rc-stop"><div class="marker"><div class="dot"></div><div class="stem"></div></div><div><div class="slab">'+esc(lab)+'</div><div class="sval">'+esc(val)+"</div></div></div>"; }
   function recommendation(){
-    // generic: echo the last quiz verdict body if present, else a friendly default
+    // echo the last quiz verdict body if present; otherwise use the config's
+    // finale.note (so the deck controls the closing line), then a plain default.
     for(var i=FLOW.length-1;i>=0;i--){ var f=FLOW[i]; if(f.type==="quiz" && S.answers[f.id]){ var v=verdictFor(f, S.answers[f.id].yes||0); if(v.body) return v.body; } }
+    if(CFG.finale && CFG.finale.recap) return CFG.finale.recap;
     return "Here’s your session at a glance — <b>we’ll follow up with the details.</b>";
   }
+  /* small inline icons for the on-card save control */
+  var IC_DL = '<span class="ic-dl"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>';
+  var IC_OK = '<span class="ic-ok"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
   function renderCard(){
     var fin = CFG.finale||{}, b = CFG.brand||{};
     if(!S.answers["done"]) saveAnswer("done", { finale:true });
@@ -482,27 +565,30 @@
       '<div class="kicker">'+esc(fin.kicker||"Your profile")+' <span class="cp">· '+esc(fin.cp||"Complete")+"</span></div>"+
       '<h1 class="title">'+(fin.title||"Complete.")+"</h1>"+
       '<div class="cardwrap"><div class="route-card" id="routeCard">'+
-        '<div class="rc-head"><div class="wm">'+esc(b.name||"")+'</div><div class="lbl">'+esc(fin.cardLabel||"Summary")+"</div></div>"+
+        '<div class="rc-head"><div class="wm">'+esc(b.name||"")+'</div>'+
+          '<button type="button" class="rc-save" id="saveImg" data-noshot="1" aria-label="Save this card as an image" title="Save as image">'+IC_DL+IC_OK+'</button></div>'+
         '<div class="rc-id"><div class="pass">'+esc(fin.passLabel||"")+'</div><div class="nm">'+esc(S.lead.name||"Guest")+'</div><div class="co">'+esc(S.lead.company||"")+"</div></div>"+
         '<div class="rc-route">'+stopsHTML+"</div>"+
         '<div class="rc-rec">'+recommendation()+"</div>"+
         '<div class="rc-foot"><span>'+esc(fin.footer||b.name||"")+"</span></div></div></div>"+
       '<div class="savehint" id="saveHint">Couldn’t render the image on this phone — just screenshot this card. It’s yours.</div>'+
-      '<div class="actions"><button class="btn primary" id="saveImg">Save as image</button><button class="btn ghost" id="done">Done</button></div>'+
       (links?'<div class="endlinks">'+links+"</div>":"")+
-      '<p class="donote" id="doneNote" style="display:none">'+(fin.note||"All set.")+"</p></div>";
+      '<button type="button" class="qa-textlink" id="cardQaPrompt">Got a question? <b>Ask it — it lands live on the slides</b> <span class="arr">→</span></button>'+
+      '<p class="donote" id="doneNote">'+(fin.note||"All set.")+"</p></div>";
     bindBack(function(){ nav(prevScreen("card")); });
     document.getElementById("saveImg").addEventListener("click", saveCardImage);
-    document.getElementById("done").addEventListener("click", function(){ document.getElementById("doneNote").style.display=""; document.getElementById("done").style.display="none"; });
+    document.getElementById("cardQaPrompt").addEventListener("click", function(){ qaFab.click(); });
   }
   function saveCardImage(){
-    var btn=document.getElementById("saveImg"); btn.disabled=true; btn.textContent="Rendering…";
-    function fail(){ btn.disabled=false; btn.textContent="Save as image"; document.getElementById("saveHint").classList.add("show"); }
+    var btn=document.getElementById("saveImg"); btn.disabled=true; btn.classList.add("saving"); btn.classList.remove("saved");
+    function reset(){ btn.disabled=false; btn.classList.remove("saving"); }
+    function fail(){ reset(); document.getElementById("saveHint").classList.add("show"); }
     function go(){
-      try{ window.html2canvas(document.getElementById("routeCard"), { backgroundColor:"#FCFBF9", scale:2, useCORS:true }).then(function(canvas){
+      try{ window.html2canvas(document.getElementById("routeCard"), { backgroundColor:"#FCFBF9", scale:2, useCORS:true,
+        ignoreElements:function(el){ return el.getAttribute && el.getAttribute("data-noshot")==="1"; } }).then(function(canvas){
         try{ var link=document.createElement("a"); link.download=((CFG.brand&&CFG.brand.name)||"card").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+(S.lead.name||"card").toLowerCase().replace(/[^a-z0-9]+/g,"-")+".png";
           link.href=canvas.toDataURL("image/png"); document.body.appendChild(link); link.click(); link.remove();
-          btn.disabled=false; btn.textContent="Saved ✓"; setTimeout(function(){ btn.textContent="Save as image"; }, 2500);
+          reset(); btn.classList.add("saved"); setTimeout(function(){ btn.classList.remove("saved"); }, 2200);
         }catch(e){ fail(); }
       }, fail); }catch(e){ fail(); }
     }
@@ -542,6 +628,63 @@
     });
   }
 
+  /* ---- guided spotlight tour (fires once, on the first checkpoint) ---------
+     Teaches the three things a first-timer misses: answers feed the presenter's
+     live view, a personal card waits at the end, and the fab pops questions onto
+     the slides. Remembered per-device so it never repeats. */
+  var TOURKEY = PFX+"tour_done";
+  var TOUR = [
+    { sel:".chips, .yn, .textbox", k:"1 of 3", t:"Answer a few quick checkpoints — every tap <b>feeds the presenter's live view</b>. They watch the room fill in as you go." },
+    { sel:"#progress", k:"2 of 3", t:"Make it to the end and you get a <b>personal card</b> to keep — yours to screenshot and take with you." },
+    { sel:"#qaFab", k:"3 of 3", t:"Anytime, tap <b>Ask a question</b> — it pops up live on the slides, with your name on it." }
+  ];
+  var tourIdx = 0;
+  function tg(id){ return document.getElementById(id); }
+  function maybeStartTour(f){
+    if(localStorage.getItem(TOURKEY)) return;
+    if(!FLOW.length || !f || f.id !== FLOW[0].id) return;
+    setTimeout(startTour, 440);              // let layout settle + the fab appear
+  }
+  function startTour(){
+    if(localStorage.getItem(TOURKEY)) return;
+    var veil = tg("tourVeil"); if(!veil) return;
+    tourIdx = 0;
+    tg("tourDots").innerHTML = TOUR.map(function(_,i){ return '<i'+(i===0?' class="on"':'')+'></i>'; }).join("");
+    veil.classList.add("show");
+    document.body.style.overflow = "hidden";
+    tg("tourNext").onclick = function(){ if(tourIdx >= TOUR.length-1) endTour(); else { tourIdx++; showTourStep(); } };
+    tg("tourSkip").onclick = endTour;
+    showTourStep();
+  }
+  function showTourStep(){
+    var step = TOUR[tourIdx], el = null, sels = step.sel.split(",");
+    for(var i=0;i<sels.length;i++){ var c = document.querySelector(sels[i].trim());   // getBoundingClientRect works for fixed els (offsetParent is null for them)
+      if(c){ var cr = c.getBoundingClientRect(); if(cr.width>0 && cr.height>0){ el=c; break; } } }
+    tg("tourK").textContent = step.k;
+    tg("tourT").innerHTML = step.t;
+    var dots = tg("tourDots").children; for(var j=0;j<dots.length;j++){ dots[j].className = (j===tourIdx?"on":""); }
+    tg("tourNext").textContent = (tourIdx >= TOUR.length-1) ? "Got it" : "Next";
+    var hole = tg("tourHole"), pop = tg("tourPop");
+    if(el){ try{ el.scrollIntoView({block:"center"}); }catch(e){} }
+    requestAnimationFrame(function(){
+      var popW = Math.min(300, window.innerWidth-28); pop.style.width = popW+"px";
+      if(!el){ hole.style.width="0"; hole.style.height="0";
+        pop.style.left = Math.round((window.innerWidth-popW)/2)+"px"; pop.style.top = Math.round(window.innerHeight*0.32)+"px"; return; }
+      var r = el.getBoundingClientRect(), pad = 8;
+      var x = Math.max(6, r.left-pad), y = Math.max(6, r.top-pad), w = r.width+pad*2, h = r.height+pad*2;
+      hole.style.left=x+"px"; hole.style.top=y+"px"; hole.style.width=w+"px"; hole.style.height=h+"px";
+      var px = Math.min(Math.max(14, r.left), window.innerWidth-popW-14);
+      var popH = pop.offsetHeight || 170, below = y+h+12;
+      pop.style.left = px+"px";
+      pop.style.top = (below+popH < window.innerHeight-12 ? below : Math.max(12, y-popH-12))+"px";
+    });
+  }
+  function endTour(){
+    localStorage.setItem(TOURKEY, "1");
+    var v = tg("tourVeil"); if(v) v.classList.remove("show");
+    document.body.style.overflow = "";
+  }
+
   /* ---- main render ---- */
   function render(){
     clearWait(); renderProgress(); setDot(); updateFab(); window.scrollTo(0,0);
@@ -551,10 +694,12 @@
     if(S.screen==="card") return renderCard();
     var f = flowItem(S.screen);
     if(!f) return renderRegister();
-    if(f.type==="single") return renderSingle(f);
-    if(f.type==="multi")  return renderMulti(f);
-    if(f.type==="quiz")   return renderQuiz(f);
-    renderRegister();
+    if(f.type==="single") renderSingle(f);
+    else if(f.type==="multi")  renderMulti(f);
+    else if(f.type==="quiz")   renderQuiz(f);
+    else if(f.type==="text")   renderText(f);
+    else return renderRegister();
+    maybeStartTour(f);
   }
 
   /* ---- boot ---- */
